@@ -26,7 +26,7 @@ def solve_guess_IVP_normalized(beta, theta0, x0, y0, t):
     x_lst = []
     y_lst = []
 
-    steps = 1000
+    steps = 500
     h = 1 / (steps - 1)
 
     x_cur = x0
@@ -102,7 +102,10 @@ def shoot_solve_normalzed(beta, theta0, t0, stepsize, silent=True):
         return x__, y__
 
     # 2. calculate the f(t0) and f(t1)
-    max_shooting = 10000
+    max_shooting = 5000
+    min_err = 1e10
+    min_err_x = []
+    min_err_y = []
     for k in range(2, max_shooting + 1):
         t_cur = t_cur - stepsize * err_cur * (t_cur - t_prev) / (err_cur -
                                                                  err_prev)
@@ -113,8 +116,14 @@ def shoot_solve_normalzed(beta, theta0, t0, stepsize, silent=True):
                 print(f"[debug] iter {k} t {t_cur} t0 {t0}, error {err_cur}")
         if err_cur < eps:
             break
+        if err_cur < min_err:
+            min_err = err_cur
+            min_err_x = x_
+            min_err_y = y_
+
     if k == max_shooting:
-        return None, None
+        print(f"[error] solve failed, get min err {min_err} > eps {eps}")
+        return min_err_x, min_err_y
     else:
         return x_, y_
 

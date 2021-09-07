@@ -88,7 +88,6 @@ def calculate_bending_stiffness_from_bezier(root_dir,
 
         we have: G = M / K
     '''
-    st = time.time()
     bezier_data_path = osp.join(root_dir, bezier_data_path)
     image_data_path = osp.join(root_dir, image_data_path)
     # 1. read the bezier curve parameters (SI)
@@ -133,7 +132,7 @@ def calculate_bending_stiffness_from_bezier(root_dir,
     # t0 = 0.1
     k_min = 1e-7
     k_max = 1e-5
-    t0 = (k - k_min) / (k_max - k_min) * 0.1 + 0.05
+    t0 = (k - k_min) / (k_max - k_min) * 0.1
     t0 = min(t0, 0.3)
 
     stepsize = 1e-1
@@ -144,11 +143,7 @@ def calculate_bending_stiffness_from_bezier(root_dir,
     beta = -1 * new_rho_g * (L**3) / new_k
     view_x, view_y = shoot_solve_normalzed(beta, theta0, t0, stepsize)  # [cm]
 
-    if view_x == None and view_y == None:
-        print(f"[error] solve {bezier_data_path} failed, G={k}")
-        return (root_dir, bezier_data_path, image_data_path, output_name)
-    else:
-        print(f"[log] solve {bezier_data_path} succ, G={k}")
+    print(f"[log] solve {bezier_data_path} done, G={k:.3e}, rhog = {rho_g:.3f}, beta = {beta:.3f}")
     x_lst = unnormalize_from_meter_to_pixel(unit_cm, *x_lst)
     y_lst = unnormalize_from_meter_to_pixel(unit_cm, *y_lst)
     x_lst = [i + img.shape[1] - raw_A[0][0] for i in x_lst]
@@ -180,7 +175,6 @@ def calculate_bending_stiffness_from_bezier(root_dir,
     plt.cla()
     plt.clf()
     plt.close('all')
-    print(f"cost {time.time() - st}s")
     return None
 
 
@@ -216,8 +210,8 @@ def generate_param_lst(root_dir):
 
 
 if __name__ == "__main__":
-    # root_dir = "D:\\Projects\\弯曲测量数据"
-    root_dir = "/home/yons/Projects/bending_measure_data"
+    root_dir = "D:\\Projects\\弯曲测量数据"
+    # root_dir = "/home/yons/Projects/bending_measure_data"
     param_lst = generate_param_lst(root_dir)
 
     # param_lst = param_lst[:20]
@@ -225,7 +219,7 @@ if __name__ == "__main__":
     # for i in param_lst:
     #     calculate_bending_stiffness_from_bezier(*i)
     from multiprocessing import Pool
-    with Pool(20) as pool:
+    with Pool(10) as pool:
         ret = pool.starmap(calculate_bending_stiffness_from_bezier, param_lst)
     for i in ret:
         if i != None:

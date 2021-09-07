@@ -3,7 +3,7 @@ import glob
 import numpy as np
 from operator import itemgetter
 
-files = [i for i in glob.glob("*png")]
+files = [i for i in glob.glob("output/*png")]
 files = list(itemgetter(* (np.random.permutation(len(files))[:12]))(files))
 files = [cv2.imread(i) for i in files] 
 
