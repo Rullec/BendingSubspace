@@ -9,7 +9,13 @@ from bezier_curve import BezierCurve
 import matplotlib.pyplot as plt
 import pickle as pkl
 # 1. load the bezier control point, the disretization points on bezier curve, the 1st derivative and the 2nd derivative
-
+import platform
+if platform.system() == "Windows":
+    delimiter = "\\"
+elif platform.system() == "Linux":
+    delimiter = "/"
+else:
+    raise ValueError(platform.system())
 
 def normalize_from_pixel_to_meter(unit_cm, *args):
     assert type(unit_cm) is float
@@ -25,8 +31,9 @@ def unnormalize_from_meter_to_pixel(unit_cm, *args):
 
 
 def get_linear_density_for_specimen(fabric_dir):
-    idx = int(fabric_dir.split("\\")[-1])
-    root_dir = '\\'.join(fabric_dir.split("\\")[:-1])
+    global delimiter
+    idx = int(fabric_dir.split(delimiter)[-1])
+    root_dir = delimiter.join(fabric_dir.split(delimiter)[:-1])
     rho_file = osp.join(root_dir, "linear_density_rec.pkl")
     if osp.exists(rho_file) is False:
         record_file = osp.join(root_dir, "厚度和重量.csv")
@@ -68,6 +75,7 @@ def move_the_bezier_origin_and_mirror(A, B, C, D):
     D[0][0] *= -1
     return A, B, C, D
 
+import time
 
 def calculate_bending_stiffness_from_bezier(root_dir,
                                             bezier_data_path,
@@ -80,6 +88,7 @@ def calculate_bending_stiffness_from_bezier(root_dir,
 
         we have: G = M / K
     '''
+    st = time.time()
     bezier_data_path = osp.join(root_dir, bezier_data_path)
     image_data_path = osp.join(root_dir, image_data_path)
     # 1. read the bezier curve parameters (SI)
@@ -130,7 +139,8 @@ def calculate_bending_stiffness_from_bezier(root_dir,
     stepsize = 1e-1
     if k < 1e-6:
         stepsize *= 0.1
-
+    if k < 3e-7:
+        stepsize *= 0.1
     beta = -1 * new_rho_g * (L**3) / new_k
     view_x, view_y = shoot_solve_normalzed(beta, theta0, t0, stepsize)  # [cm]
 
@@ -170,6 +180,7 @@ def calculate_bending_stiffness_from_bezier(root_dir,
     plt.cla()
     plt.clf()
     plt.close('all')
+    print(f"cost {time.time() - st}s")
     return None
 
 
@@ -179,10 +190,10 @@ def generate_param_lst(root_dir):
     fabric_subdir_lst = get_fabric_subdirs(root_dir)
     param_lst = []
     output_dir = "output"
-    if osp.exists(output_dir):
-        import shutil
-        shutil.rmtree(output_dir)
-    os.makedirs(output_dir)
+    if osp.exists(output_dir) is False:
+        os.makedirs(output_dir)
+        # import shutil
+        # shutil.rmtree(output_dir)
 
     for fabric_subdir in fabric_subdir_lst:
         front_image_data, front_bezier_data, back_image_data, back_bezier_data = fetch_fabric_data(
@@ -205,7 +216,8 @@ def generate_param_lst(root_dir):
 
 
 if __name__ == "__main__":
-    root_dir = "D:\\Projects\\弯曲测量数据"
+    # root_dir = "D:\\Projects\\弯曲测量数据"
+    root_dir = "/home/yons/Projects/bending_measure_data"
     param_lst = generate_param_lst(root_dir)
 
     # param_lst = param_lst[:20]
@@ -213,7 +225,7 @@ if __name__ == "__main__":
     # for i in param_lst:
     #     calculate_bending_stiffness_from_bezier(*i)
     from multiprocessing import Pool
-    with Pool(8) as pool:
+    with Pool(20) as pool:
         ret = pool.starmap(calculate_bending_stiffness_from_bezier, param_lst)
     for i in ret:
         if i != None:

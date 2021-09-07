@@ -23,18 +23,25 @@ def get_fabric_subdirs(root_dir):
 
 
 from glob import glob
-
+import platform
+if platform.system() == "Windows":
+    delimiter = "\\"
+elif platform.system() == "Linux":
+    delimiter = "/"
+else:
+    raise ValueError(platform.system())
 
 def fetch_fabric_data(dirname):
+    global delimiter
     # 1. validate the data
     assert osp.exists(dirname)
     back_bezier_data = [
-        i.split('\\')[-1] for i in glob(osp.join(dirname, "Back*.mat"))
+        i.split(delimiter)[-1] for i in glob(osp.join(dirname, "Back*.mat"))
     ]
     front_bezier_data = [
-        i.split('\\')[-1] for i in glob(osp.join(dirname, "Front*.mat"))
+        i.split(delimiter)[-1] for i in glob(osp.join(dirname, "Front*.mat"))
     ]
-    images = [i.split('\\')[-1] for i in glob(osp.join(dirname, "*.JPG"))]
+    images = [i.split(delimiter)[-1] for i in glob(osp.join(dirname, "*.JPG"))]
 
     back_bezier_data.sort(key=lambda x: float(x[5:-4]))
     front_bezier_data.sort(key=lambda x: float(x[6:-4]))
