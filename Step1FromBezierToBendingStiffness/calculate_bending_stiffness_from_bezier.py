@@ -1,4 +1,4 @@
-from load_bending_bezier_data import get_fabric_subdirs, fetch_fabric_data, load_bezier_datamat, load_captured_image
+from load_bending_bezier_data import get_fabric_subdirs, fetch_fabric_data, load_bezier_datamat, load_captured_image, get_delimiter
 import os
 
 from solve_bending_equation import shoot_solve_normalzed
@@ -9,13 +9,10 @@ from bezier_curve import BezierCurve
 import matplotlib.pyplot as plt
 import pickle as pkl
 # 1. load the bezier control point, the disretization points on bezier curve, the 1st derivative and the 2nd derivative
-import platform
-if platform.system() == "Windows":
-    delimiter = "\\"
-elif platform.system() == "Linux":
-    delimiter = "/"
-else:
-    raise ValueError(platform.system())
+
+specimen_width = 3  # cm
+specimen_length = 22  # cm
+
 
 def normalize_from_pixel_to_meter(unit_cm, *args):
     assert type(unit_cm) is float
@@ -30,9 +27,22 @@ def unnormalize_from_meter_to_pixel(unit_cm, *args):
     return new_data
 
 
+def get_specimen_width_cm():
+    global specimen_width
+    return specimen_width
+
+def get_specimen_length_cm():
+    global specimen_length
+    return specimen_length
+
+
 def get_linear_density_for_specimen(fabric_dir):
-    global delimiter
-    idx = int(fabric_dir.split(delimiter)[-1])
+    specimen_width = get_specimen_width_cm()
+    specimen_length = get_specimen_length_cm()
+    delimiter = get_delimiter()
+
+    idx_str = fabric_dir.split(delimiter)[-1]
+    idx = int(idx_str)
     root_dir = delimiter.join(fabric_dir.split(delimiter)[:-1])
     rho_file = osp.join(root_dir, "linear_density_rec.pkl")
     if osp.exists(rho_file) is False:
@@ -47,8 +57,7 @@ def get_linear_density_for_specimen(fabric_dir):
 
         # for line in lines:
         #     print(line)
-        specimen_width = 3  # cm
-        specimen_length = 22  # cm
+
         linear_density_dict = {}
         for line in lines[1:]:
             id = int(line[0])
@@ -75,47 +84,13 @@ def move_the_bezier_origin_and_mirror(A, B, C, D):
     D[0][0] *= -1
     return A, B, C, D
 
+
 import time
 
-def calculate_bending_stiffness_from_bezier(root_dir,
-                                            bezier_data_path,
-                                            image_data_path,
-                                            output_name=None):
-    '''
-        G: bending stiffness [N \cdot m^2]
-        K: curvature [m^{-1}]
-        M: bending torque [N \cdot m]
 
-        we have: G = M / K
-    '''
-    bezier_data_path = osp.join(root_dir, bezier_data_path)
-    image_data_path = osp.join(root_dir, image_data_path)
-    # 1. read the bezier curve parameters (SI)
-    A, B, C, D, unit_cm, img_filename, projective2d = load_bezier_datamat(
-        bezier_data_path)
-    img, origin_mode = load_captured_image(image_data_path, projective2d)
-    raw_A = A
-    A, B, C, D = move_the_bezier_origin_and_mirror(A, B, C, D)
-
-    A, B, C, D = normalize_from_pixel_to_meter(unit_cm, A, B, C, D)  # [m]
-
-    linera_rho = get_linear_density_for_specimen(root_dir)  # [kg / m]
-    rho_g = 9.8 * linera_rho  # m. s^{-2}. kg. m^{-1}
-    bezier_curve = BezierCurve(A, B, C, D)
+def draw_bending_curve(bezier_curve, k, rho_g, unit_cm, img, raw_A,
+                       output_name, origin_mode):
     x_lst, y_lst = bezier_curve.get_discretized_point_lst()
-    M_lst = bezier_curve.get_Torque_lst(rho_g)
-    K_lst = bezier_curve.get_curvatured_lst()
-    G_lst = M_lst / K_lst
-
-    y = np.array(M_lst)
-    x = np.array(K_lst)
-    if x.shape != y.shape:
-        return
-    x = x[y > 0]
-    y = y[y > 0]
-
-    k = np.dot(x, y) / np.dot(x, x)
-    new_y = k * x
     # l = bezier_curve.get_total_arc_length()
     # print(f"begin to solve")
     theta_lst = bezier_curve.get_theta_lst()
@@ -143,7 +118,9 @@ def calculate_bending_stiffness_from_bezier(root_dir,
     beta = -1 * new_rho_g * (L**3) / new_k
     view_x, view_y = shoot_solve_normalzed(beta, theta0, t0, stepsize)  # [cm]
 
-    print(f"[log] solve {bezier_data_path} done, G={k:.3e}, rhog = {rho_g:.3f}, beta = {beta:.3f}")
+    # print(
+    #     f"[log] solve {bezier_data_path} done, G={k:.3e}, rhog = {rho_g:.3f}, beta = {beta:.3f}"
+    # )
     x_lst = unnormalize_from_meter_to_pixel(unit_cm, *x_lst)
     y_lst = unnormalize_from_meter_to_pixel(unit_cm, *y_lst)
     x_lst = [i + img.shape[1] - raw_A[0][0] for i in x_lst]
@@ -175,7 +152,61 @@ def calculate_bending_stiffness_from_bezier(root_dir,
     plt.cla()
     plt.clf()
     plt.close('all')
-    return None
+
+
+def calculate_bending_stiffness_from_bezier(root_dir,
+                                            bezier_data_path,
+                                            image_data_path,
+                                            draw_resolved_curve=False,
+                                            output_name=None):
+    '''
+        G: bending stiffness [N \cdot m^2]
+        K: curvature [m^{-1}]
+        M: bending torque [N \cdot m]
+
+        we have: G = M / K
+    '''
+    bezier_data_path = osp.join(root_dir, bezier_data_path)
+    image_data_path = osp.join(root_dir, image_data_path)
+
+    # 1. read the bezier curve parameters (SI)
+    A, B, C, D, unit_cm, img_filename, projective2d = load_bezier_datamat(
+        bezier_data_path)
+
+    raw_A = A
+    A, B, C, D = move_the_bezier_origin_and_mirror(A, B, C, D)
+
+    A, B, C, D = normalize_from_pixel_to_meter(unit_cm, A, B, C, D)  # [m]
+
+    linera_rho = get_linear_density_for_specimen(root_dir)  # [kg / m]
+    rho_g = 9.8 * linera_rho  # m. s^{-2}. kg. m^{-1}
+    bezier_curve = BezierCurve(A, B, C, D)
+
+    M_lst = bezier_curve.get_Torque_lst(rho_g)
+    K_lst = bezier_curve.get_curvatured_lst()
+    G_lst = M_lst / K_lst
+
+    y = np.array(M_lst)
+    x = np.array(K_lst)
+    if x.shape != y.shape:
+        return
+    x = x[y > 0]
+    y = y[y > 0]
+
+
+    k = np.dot(x, y) / np.dot(x, x)
+    if np.isnan(k):
+        assert len(y) == 0
+        print(f"all curvature is negative, set this value to 0")
+        k = 0
+    # -------------- done, the below code are used to resolve the diff eq-----------
+    if draw_resolved_curve == True:
+        img, origin_mode = load_captured_image(image_data_path, projective2d)
+        draw_bending_curve(bezier_curve, k, rho_g, unit_cm, img, raw_A,
+                           output_name, origin_mode)
+
+    # assemble the info matrix
+    return k
 
 
 def generate_param_lst(root_dir):
@@ -216,11 +247,11 @@ if __name__ == "__main__":
 
     # param_lst = param_lst[:20]
 
-    # for i in param_lst:
-    #     calculate_bending_stiffness_from_bezier(*i)
-    from multiprocessing import Pool
-    with Pool(10) as pool:
-        ret = pool.starmap(calculate_bending_stiffness_from_bezier, param_lst)
-    for i in ret:
-        if i != None:
-            print(f"{i} solve failed")
+    for i in param_lst:
+        calculate_bending_stiffness_from_bezier(*i)
+    # from multiprocessing import Pool
+    # with Pool(10) as pool:
+    #     ret = pool.starmap(calculate_bending_stiffness_from_bezier, param_lst)
+    # for i in ret:
+    #     if i != None:
+    #         print(f"{i} solve failed")

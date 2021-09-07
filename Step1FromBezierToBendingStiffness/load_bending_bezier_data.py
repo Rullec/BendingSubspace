@@ -5,6 +5,9 @@ from bezier_curve import BezierCurve
 from scipy.io import loadmat
 from matplotlib import pyplot as plt
 from multiprocessing import Pool
+from glob import glob
+import platform
+
 
 def get_fabric_subdirs(root_dir):
     subdirs = os.listdir(root_dir)
@@ -22,17 +25,18 @@ def get_fabric_subdirs(root_dir):
     return normal_dirs
 
 
-from glob import glob
-import platform
-if platform.system() == "Windows":
-    delimiter = "\\"
-elif platform.system() == "Linux":
-    delimiter = "/"
-else:
-    raise ValueError(platform.system())
+def get_delimiter():
+    if platform.system() == "Windows":
+        delimiter = "\\"
+    elif platform.system() == "Linux":
+        delimiter = "/"
+    else:
+        raise ValueError(platform.system())
+    return delimiter
+
 
 def fetch_fabric_data(dirname):
-    global delimiter
+    delimiter = get_delimiter()
     # 1. validate the data
     assert osp.exists(dirname)
     back_bezier_data = [
@@ -170,7 +174,6 @@ def draw_bezier(root_dir, front_image_data, front_bezier_data, back_image_data,
 
         new_img, imshow_origin = load_captured_image(img_path, proj2d)
 
-
         x_lst, y_lst = BezierCurve(A, B, C, D).get_discretized_point_lst()
         ax = plt.subplot(4, 4, i + 1)
         ax.imshow(new_img, origin=imshow_origin)
@@ -189,6 +192,31 @@ def draw_bezier_batch(i):
         i)
     draw_bezier(i, front_image_data, front_bezier_data, back_image_data,
                 back_bezier_data)
+
+
+def get_index_and_name_from_fabric_subdir(path):
+    deli = get_delimiter()
+    id = int(path.split(deli)[-1])
+    # print(f"path {path} id {id}")
+    pkl_path = "D:\\Projects\\Subspace\\Archive\\full_data.pkl"
+    import pickle as pkl
+    with open(pkl_path, 'rb') as f:
+        cont = pkl.load(f)
+        id_lst = cont['id']
+        label_lst = cont['label']
+        # print(label_lst, len(label_lst))
+        # print(id, label_lst[id])
+        # exit()
+        assert len(id_lst) == len(label_lst)
+        label = None
+        for _idx, id_form in enumerate(id_lst):
+            if id_form == id:
+                label = label_lst[_idx]
+                break
+    if label == None:
+        # print(f"id lst {id_lst}")
+        raise ValueError(f"fail to get the name for {path}")
+    return id, label
 
 
 if __name__ == "__main__":

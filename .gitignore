@@ -2,3 +2,4 @@ logs/
 .vscode/
 includes/
 __pycache__/
+*output*
