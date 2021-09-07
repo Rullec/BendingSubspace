@@ -1,7 +1,7 @@
 from load_bending_bezier_data import get_fabric_subdirs, fetch_fabric_data, load_bezier_datamat, load_captured_image
 import os
 
-from solve_bending_equation import shooting_solve
+from solve_bending_equation import shoot_solve_normalzed
 from PIL import Image
 import numpy as np
 import os.path as osp
@@ -108,8 +108,6 @@ def calculate_bending_stiffness_from_bezier(root_dir,
 
     k = np.dot(x, y) / np.dot(x, x)
     new_y = k * x
-
-    print(f"[log] approx G = {k}, begin to resolve the governing eq")
     # l = bezier_curve.get_total_arc_length()
     # print(f"begin to solve")
     theta_lst = bezier_curve.get_theta_lst()
@@ -123,34 +121,32 @@ def calculate_bending_stiffness_from_bezier(root_dir,
     L = bezier_curve.total_arc_length * 1e2
 
     # call the subroutine
-    t0 = 200
+    # t0 = 0.1
+    k_min = 1e-7
+    k_max = 1e-5
+    t0 = (k - k_min) / (k_max - k_min) * 0.1 + 0.05
+    t0 = min(t0, 0.3)
 
-    for i in range(8):
-        view_x, view_y = shooting_solve(new_k, new_rho_g, L, theta0, 0, 0,
-                                        t0)  # [cm]
+    stepsize = 1e-1
+    if k < 1e-6:
+        stepsize *= 0.1
 
-        # if solve failed
-        if view_x == None and view_y == None:
-            new_t = 2 * t0
-            print(
-                f"[log] try {i} solve failed, change to from {t0} to {new_t}")
-            t0 = new_t
-        else:
-            print(f"[log] solve succ")
-            break
+    beta = -1 * new_rho_g * (L**3) / new_k
+    view_x, view_y = shoot_solve_normalzed(beta, theta0, t0, stepsize)  # [cm]
 
     if view_x == None and view_y == None:
-        print(f"solve {bezier_data_path} failed")
+        print(f"[error] solve {bezier_data_path} failed, G={k}")
         return (root_dir, bezier_data_path, image_data_path, output_name)
-
+    else:
+        print(f"[log] solve {bezier_data_path} succ, G={k}")
     x_lst = unnormalize_from_meter_to_pixel(unit_cm, *x_lst)
     y_lst = unnormalize_from_meter_to_pixel(unit_cm, *y_lst)
     x_lst = [i + img.shape[1] - raw_A[0][0] for i in x_lst]
     y_lst = [i + raw_A[0][1] for i in y_lst]
     plt.plot(x_lst, y_lst, label="raw bending curve")
 
-    view_x = np.array(view_x)
-    view_y = np.array(view_y)
+    view_x = np.array(view_x) * L
+    view_y = np.array(view_y) * L
 
     # view x from cm to m
     view_x *= 1e-2
@@ -214,6 +210,8 @@ if __name__ == "__main__":
 
     # param_lst = param_lst[:20]
 
+    # for i in param_lst:
+    #     calculate_bending_stiffness_from_bezier(*i)
     from multiprocessing import Pool
     with Pool(8) as pool:
         ret = pool.starmap(calculate_bending_stiffness_from_bezier, param_lst)
