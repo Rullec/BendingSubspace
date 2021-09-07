@@ -4,19 +4,24 @@ calculate all bending stiffness, write down the result to a info dict, save
 import os.path as osp
 from load_bending_bezier_data import get_fabric_subdirs, fetch_fabric_data, get_index_and_name_from_fabric_subdir
 from calculate_bending_stiffness_from_bezier import get_linear_density_for_specimen, get_specimen_width_cm, calculate_bending_stiffness_from_bezier
+import numpy as np
 
 if __name__ == "__main__":
     root_dir = "D:\\Projects\\弯曲测量数据"
     # info_dict = {
     linear_density_lst = []
+    bending_length_lst = []
     density_lst = []
     idx_lst = []
     name_lst = []
     angles_lst = []
     front_stiffness_lst = []
     back_stiffness_lst = []
+    front_bending_length_lst = []
+    back_bending_length_lst = []
 
     num_of_angles = 8
+    g = 9.81
     for fabric_subdir in get_fabric_subdirs(root_dir):
         linear_density = get_linear_density_for_specimen(fabric_subdir)
         density = 1 / (1e-2 * get_specimen_width_cm()) * linear_density
@@ -26,6 +31,7 @@ if __name__ == "__main__":
             fabric_subdir)
 
         front_angles, back_angles = [], []
+        front_bending_length, back_bending_length = [], []
         for _idx in range(num_of_angles):
             front_image_data = front_image_data_lst[_idx]
             front_bezier_data = front_bezier_data_lst[_idx]
@@ -35,18 +41,31 @@ if __name__ == "__main__":
             # print(f"front {_idx} {front_k}")
             front_angles.append(front_k)
 
+            # print(2 * np.power(front_k / (linear_density * g), 1 / 3))
+            # print(front_k / (linear_density * g))
+            # exit()
+            # print(front_k)
+            # print(linear_density)
+            # print(g)
+            val = 2 * np.power(front_k / (linear_density * g), 1 / 3)
+            front_bending_length.append(val)
+
             back_image_data = back_image_data_lst[_idx]
             back_bezier_data = back_bezier_data_lst[_idx]
             back_k = calculate_bending_stiffness_from_bezier(
                 cur_root_dir, back_bezier_data, back_image_data)
             # print(f"back {_idx} {back_k}")
             back_angles.append(back_k)
+            val = 2 * np.power(back_k / (linear_density * g), 1 / 3)
+            back_bending_length.append(val)
+
         # print(f"front {front_angles}")
         # print(f"back {back_angles}")
         # exit()
         # push into the list
 
-        print(fabric_id, name, linear_density, density)
+        print(fabric_id, name, linear_density, density, front_bending_length,
+              back_bending_length)
 
         linear_density_lst.append(linear_density)
         density_lst.append(density)
@@ -54,6 +73,8 @@ if __name__ == "__main__":
         name_lst.append(name)
         front_stiffness_lst.append(front_angles)
         back_stiffness_lst.append(back_angles)
+        front_bending_length_lst.append(front_bending_length)
+        back_bending_length_lst.append(back_bending_length)
     unit = "N.m^2"
     angles = [i * 22.5 for i in range(num_of_angles)]
     data_dict = {
@@ -63,6 +84,8 @@ if __name__ == "__main__":
         "linear_density_lst": linear_density_lst,
         "front_bending_stiffness_lst": front_stiffness_lst,
         "back_bending_stiffness_lst": back_stiffness_lst,
+        "front_bending_length_lst": front_bending_length_lst,
+        "back_bending_length_lst": back_bending_length_lst,
         "angles": angles,
         "unit": unit
     }

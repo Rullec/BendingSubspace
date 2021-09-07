@@ -189,7 +189,9 @@ def calculate_bending_stiffness_from_bezier(root_dir,
     y = np.array(M_lst)
     x = np.array(K_lst)
     if x.shape != y.shape:
-        return
+        min_shape = min( len(y) , len(x))
+        y = y[:min_shape]
+        x = x[:min_shape]
     x = x[y > 0]
     y = y[y > 0]
 
