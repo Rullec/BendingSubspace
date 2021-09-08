@@ -47,6 +47,8 @@ def calculate_sim_param(density, warp_length, weft_length, bias_length):
 if __name__ == "__main__":
     bending_stiffness_pkl = r"..\Step1FromBezierToBendingStiffness\output\bending_stiffness_data.pkl"
 
+    output_pkl = r"output\bending_sim_param.pkl"
+
     with open(bending_stiffness_pkl, 'rb') as f:
         cont = pkl.load(f)
     name_lst = cont["name_lst"]
@@ -59,7 +61,8 @@ if __name__ == "__main__":
     unit = cont["unit"]
 
     num_of_data = len(cont['name_lst'])
-
+    front_sim_param_lst = []
+    back_sim_param_lst = []
     for _idx in range(num_of_data):
         fabric_id = idx_lst[_idx]
         name = name_lst[_idx]
@@ -84,8 +87,40 @@ if __name__ == "__main__":
         back_warp_gui = convert_bending_simtogui(back_warp_sim)
         back_weft_gui = convert_bending_simtogui(back_weft_sim)
         back_bias_gui = convert_bending_simtogui(back_bias_sim)
+        # print("---------------")
+        # print(fabric_id, name, f"density {density} kg.m^{-2}")
+        # print(f"重量 {density * 0.22 * 0.03 * 1e3} g")
+        # print("front length (mm)", f"warp(经) {back_warp_length * 1e3}",
+        #       f"weft(纬) {back_weft_length * 1e3}",
+        #       f"bias {back_bias_length * 1e3}")
+        # print(
+        #     f"front sim internal: warp(经) {front_warp_sim}, weft(纬) {front_weft_sim}, bias {front_bias_sim}"
+        # )
+        print(f"------{fabric_id}, {name}------")
+        print("front gui", front_warp_gui, front_weft_gui, front_bias_gui)
+        print("back gui", back_warp_gui, back_weft_gui, back_bias_gui)
+        front_sim_param_lst.append({
+            "warp": front_warp_gui,
+            "weft": front_weft_gui,
+            "bias": front_bias_gui
+        })
+        back_sim_param_lst.append({
+            "warp": back_warp_gui,
+            "weft": back_weft_gui,
+            "bias": back_bias_gui
+        })
 
-        print(fabric_id, name, "front gui", front_warp_gui, front_weft_gui,
-              front_bias_gui)
-        print(fabric_id, name, "back gui", back_warp_gui, back_weft_gui,
-              back_bias_gui)
+        # print(fabric_id, name, "back gui", back_warp_gui, back_weft_gui,
+        #       back_bias_gui)
+
+    cont["front_sim_param_lst"] = front_sim_param_lst
+    cont["back_sim_param_lst"] = back_sim_param_lst
+
+    import os.path as osp
+    import os
+    output_dir = osp.dirname(output_pkl)
+    if osp.exists(output_dir) is False:
+        os.makedirs(output_dir)
+    with open(output_pkl, 'wb') as f:
+        pkl.dump(cont, f)
+    print(f"write bending sim param pkl to {output_pkl}")
