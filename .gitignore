@@ -1,4 +1,4 @@
-logs/
+*log*/
 .vscode/
 includes/
 __pycache__/
