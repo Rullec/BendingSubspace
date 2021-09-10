@@ -1,4 +1,6 @@
 import torch
+import os
+import os.path as osp
 import numpy as np
 import torch.optim as optim
 import matplotlib.pyplot as plt
@@ -138,6 +140,9 @@ class Net(nn.Module):
 
 
 def train():
+    output_dir = "output"
+    if osp.exists(output_dir) == False:
+        os.make
     train_loader, test_loader = get_dataloader()
     # net = Net()
     net = torch.load("epoch-550")
@@ -341,4 +346,5 @@ def test():
 
 
 if __name__ == "__main__":
-    test()
+    # test()
+    train()
