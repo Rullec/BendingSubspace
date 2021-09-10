@@ -39,14 +39,9 @@ class Draw3D:
         self.color_group = []
         self.alpha_group = []
         self.label_group = []
+        self.func = None
 
-    def add_points(self,
-                   x_lst,
-                   y_lst,
-                   z_lst,
-                   color='blue',
-                   alpha=1,
-                   label=""):
+    def add_points(self, x_lst, y_lst, z_lst, color='blue', alpha=1, label=""):
         self.x_lst_group.append(x_lst)
         self.y_lst_group.append(y_lst)
         self.z_lst_group.append(z_lst)
@@ -78,6 +73,9 @@ class Draw3D:
         ax.set_xbound(low_lim, high_lim)
         ax.set_ybound(low_lim, high_lim)
         ax.set_zbound(low_lim, high_lim)
+        if self.func is not None:
+            print("set pick event")
+            fig.canvas.mpl_connect('pick_event', self.func)
         # ax.view_init(elev=10., azim=ii)
         for i in range(len(self.x_lst_group)):
             ax.scatter3D(self.x_lst_group[i],
@@ -86,6 +84,10 @@ class Draw3D:
                          color=self.color_group[i],
                          alpha=self.alpha_group[i],
                          label=self.label_group[i])
+            # for j in range(len(self.x_lst_group[i])):
+            #     ax.text3D(self.x_lst_group[i][j],
+            #                 self.y_lst_group[i][j],
+            #                 self.z_lst_group[i][j], str(j))
         plt.legend()
         plt.show()
 
@@ -112,6 +114,9 @@ class Draw3D:
             plt.savefig(f"output/{ii}.png")
             plt.cla()
             plt.clf()
+
+    def set_pick_callback(self, func):
+        self.func = func
 
 
 if __name__ == "__main__":

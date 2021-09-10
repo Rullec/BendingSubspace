@@ -20,13 +20,15 @@ def calculate_sample_point_from_point_cloud(raw_point_cloud: np.ndarray,
     assert type(raw_point_cloud) == np.ndarray, type(raw_point_cloud)
     raw_point_cloud = list(raw_point_cloud)
     sampled_pts = []
+    compare_repo = None
     for _idx in tqdm(range(len(raw_point_cloud))):
         # print(f"----------")
         raw_pt = raw_point_cloud[_idx]
         if len(sampled_pts) == 0:
             sampled_pts.append(raw_pt)
+            compare_repo = np.array([raw_pt])
         else:
-            diff = raw_pt - np.array(sampled_pts)
+            diff = raw_pt - compare_repo
             # print(f"raw pt {raw_pt}")
             # print(f"sampled {sampled_pts}")
             # print(f"diff {diff} {diff.shape}")
@@ -35,12 +37,8 @@ def calculate_sample_point_from_point_cloud(raw_point_cloud: np.ndarray,
             min_dist = np.min(diff_norm)
             if min_dist > min_dist_thre:
                 sampled_pts.append(raw_pt)
-            # else:
-            #     print(
-            #         f"dist {min_dist} < min_dist_thre {min_dist_thre}, ignore {len(sampled_pts)}"
-            #     )
-            # if len(sampled_pts) > 2:
-            #     break
+                compare_repo = np.concatenate(
+                    [compare_repo, np.array([raw_pt])], axis=0)
     sampled_pts = np.array(sampled_pts)
     return sampled_pts
 
@@ -75,7 +73,7 @@ def sampling_from_uniform_latence(model: Net,
         else:
             min_z[i] *= (1 - scale)
 
-    num_of_samples = 50
+    num_of_samples = 80
     from itertools import product
 
     sampled_z = list(
@@ -114,7 +112,9 @@ def sampling_from_dataset_density(net, feature_tensor):
 if __name__ == "__main__":
     # 1. get the model path
     # vae_model_path = "../output/20210909_version1.pkl"
-    vae_model_path = "../output/20210910_version2.pkl"
+    # vae_model_path = "../output/20210910_version2.pkl"
+    # vae_model_path = "../output/20210910_version3.pkl"
+    vae_model_path = "../output/20210910_bigdataset_clean.pkl"
     net = torch.load(vae_model_path)
     assert osp.exists(vae_model_path)
     dataset_root_dir = "../Step1VAEtraining/dataset.log"
@@ -124,21 +124,31 @@ if __name__ == "__main__":
     train_loader, _ = get_dataloader(dataset_root_dir)
     feature_tensor, name_tensor = get_all_data(train_loader, None)
     feature_tensor *= ToyDataset.normalize_amp
+    # illegal_idx = [186, 187, 560, 577]
+    # print(len(name_tensor))
+    # for i in illegal_idx:
+    #     print(i, feature_tensor[i], name_tensor[i])
+    # exit()
+    new_feature_tensor = sampling_from_uniform_latence(
+        net, ToyDataset.normalize(torch.Tensor(feature_tensor)))
 
-    # new_feature_tensor = sampling_from_uniform_latence(
-    #     net, ToyDataset.normalize(torch.Tensor(feature_tensor)))
-
-    new_feature_tensor = sampling_from_dataset_density(net, feature_tensor)
+    # new_feature_tensor = sampling_from_dataset_density(net, feature_tensor)
+    import pickle as pkl
+    output = "save_sampling.pkl"
+    with open(output, 'wb') as f:
+        pkl.dump(new_feature_tensor, f)
+        print(f"save to {output}")
 
     drawer = Draw3D()
-    print(feature_tensor.shape)
-    print(new_feature_tensor.shape)
+    # print(feature_tensor.shape)
+    # print(new_feature_tensor.shape)
     drawer.add_points(feature_tensor[:, 0],
                       feature_tensor[:, 1],
                       feature_tensor[:, 2],
                       color='blue',
                       alpha=1,
                       label="dataset")
+    # drawer.set_pick_callback(on_pick)
     drawer.add_points(new_feature_tensor[:, 0],
                       new_feature_tensor[:, 1],
                       new_feature_tensor[:, 2],

@@ -37,6 +37,10 @@ class ToyDataset(Dataset):
                 [float(warp), float(weft),
                  float(bias)], dtype=np.float32)
             name = f"{name}_{face}"
+            if name == "威化26度牛仔_front" or name == "平纹_front" or name == "牛皮_front" or name == "棉天丝牛仔_front":
+                print(f"[warn] ignore {name}")
+                continue
+
             self.name_lst.append(name)
             self.data_lst.append(data)
 

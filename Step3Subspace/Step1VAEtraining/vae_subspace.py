@@ -142,13 +142,12 @@ def train(kl_weight_begin_epoch, kl_weight_max, weight_path=None):
         total_kl_loss /= num_items
         total_reconstr_loss /= num_items
         total_loss /= num_items
+        max_diff *= train_loader.dataset.normalize_amp
         ed = time.time()
         tfb_writer.add_scalar("kl_loss", total_kl_loss, epoch)
         tfb_writer.add_scalar("recons_loss", total_reconstr_loss, epoch)
         tfb_writer.add_scalar("kl_weight", kl_weight, epoch)
-        tfb_writer.add_scalar("max_diff",
-                              max_diff * train_loader.dataset.normalize_amp,
-                              epoch)
+        tfb_writer.add_scalar("max_diff", max_diff, epoch)
         # -------- begin to do evaluation -------
         # net.eval()
         # num_items_eval = 0
@@ -187,11 +186,11 @@ def get_all_data(train_dataloader, test_dataloader):
 
     for img, label in train_dataloader:
         img_tensor.append(img)
-        label_tensor.append(label)
+        label_tensor += label
     if test_dataloader is not None:
         for img, label in test_dataloader:
             img_tensor.append(img)
-            label_tensor.append(label)
+            label_tensor += label
 
     img_tensor = torch.cat(img_tensor).detach().numpy()
     # label_tensor = torch.cat(label_tensor).detach().numpy()
@@ -235,8 +234,8 @@ def test(pkl):
                       color='red',
                       alpha=0.1,
                       label="gen")
-    # drawer.draw_gif()
-    drawer.draw()
+    drawer.draw_gif()
+    # drawer.draw()
     # from tqdm import tqdm
     # import os
     # output_dir = "output"

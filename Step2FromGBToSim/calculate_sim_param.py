@@ -4,10 +4,10 @@ import pickle as pkl
 
 def get_warp_weft_bias_value(bending_lst):
     assert 8 == len(bending_lst)
-    # 0, 22.5, 45, 67.5, 90
+    # 0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5 
     warp = bending_lst[0]
-    bias = bending_lst[1]
-    weft = bending_lst[2]
+    bias = bending_lst[2]
+    weft = bending_lst[4]
     return warp, weft, bias
 
 
