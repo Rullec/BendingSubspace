@@ -73,7 +73,7 @@ def sampling_from_uniform_latence(model: Net,
         else:
             min_z[i] *= (1 - scale)
 
-    num_of_samples = 80
+    num_of_samples = 60
     from itertools import product
 
     sampled_z = list(
@@ -155,8 +155,8 @@ if __name__ == "__main__":
                       color='red',
                       alpha=0.2,
                       label="generated")
-    # drawer.draw()
-    drawer.draw_gif()
+    drawer.draw()
+    # drawer.draw_gif()
     # 3. uniform sampling & sampling from the data point, check the result
     # make it bigger
 

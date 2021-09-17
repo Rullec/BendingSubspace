@@ -22,7 +22,7 @@ def Com(n, k):
 
 
 class BezierCurve(object):
-    def __init__(self, *args, n=200):
+    def __init__(self, *args, n=200, cutted_from_the_biggest_curvature=False):
         '''
         args: Given many bezier points
         n: sampling number over the arc length
@@ -43,7 +43,8 @@ class BezierCurve(object):
         # self.__cut_from_the_remotest_point()
         self.curvaute_lst = self.__calc_curvature_lst()
         # self.__cut_to_the_end_of_zero_curvature()
-        self.__cur_from_the_biggest_curvature()
+        if cutted_from_the_biggest_curvature == True:
+            self.__cut_from_the_biggest_curvature()
         self.ds_lst = None
         self.total_arc_length = None
         self.dx_lst = None
@@ -66,7 +67,7 @@ class BezierCurve(object):
     #         self.curvaute_lst = self.curvaute_lst[:cut_idx]
     #         self.num_of_samples = len(self.x_lst)
 
-    def __cur_from_the_biggest_curvature(self):
+    def __cut_from_the_biggest_curvature(self):
         cut_idx = int(np.argmax(self.curvaute_lst) * 1.5)
         self.x_lst = self.x_lst[cut_idx:]
         self.y_lst = self.y_lst[cut_idx:]

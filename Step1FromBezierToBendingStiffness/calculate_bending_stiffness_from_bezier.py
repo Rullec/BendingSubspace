@@ -10,6 +10,11 @@ import matplotlib.pyplot as plt
 import pickle as pkl
 # 1. load the bezier control point, the disretization points on bezier curve, the 1st derivative and the 2nd derivative
 
+import sys
+
+sys.path.append("../Step2FromGBToSim")
+from calculate_sim_param import calculate_sim_param, convert_bending_simtogui
+
 specimen_width = 3  # cm
 specimen_length = 22  # cm
 
@@ -31,22 +36,24 @@ def get_specimen_width_cm():
     global specimen_width
     return specimen_width
 
+
 def get_specimen_length_cm():
     global specimen_length
     return specimen_length
 
 
-def get_linear_density_for_specimen(fabric_dir):
+def get_linear_density_for_specimen(fabric_dir, idx):
     specimen_width = get_specimen_width_cm()
     specimen_length = get_specimen_length_cm()
     delimiter = get_delimiter()
 
-    idx_str = fabric_dir.split(delimiter)[-1]
-    idx = int(idx_str)
+    # idx_str = fabric_dir.split(delimiter)[-1]
+    # idx = int(idx_str)
     root_dir = delimiter.join(fabric_dir.split(delimiter)[:-1])
     rho_file = osp.join(root_dir, "linear_density_rec.pkl")
     if osp.exists(rho_file) is False:
-        record_file = osp.join(root_dir, "厚度和重量.csv")
+        # record_file = osp.join(root_dir, "厚度和重量.csv")
+        record_file = r"D:\Projects\弯曲测量数据\厚度和重量.csv"
         lines = []
         with open(record_file, 'r') as f:
             for line in f.readlines():
@@ -154,11 +161,23 @@ def draw_bending_curve(bezier_curve, k, rho_g, unit_cm, img, raw_A,
     plt.close('all')
 
 
-def calculate_bending_stiffness_from_bezier(root_dir,
-                                            bezier_data_path,
-                                            image_data_path,
-                                            draw_resolved_curve=False,
-                                            output_name=None):
+def calculate_arc_length_bezier(root_dir, bezier_data_path):
+    bezier_data_path = osp.join(root_dir, bezier_data_path)
+    A, B, C, D, unit_cm, img_filename, projective2d = load_bezier_datamat(
+        bezier_data_path)
+    A, B, C, D = normalize_from_pixel_to_meter(unit_cm, A, B, C, D)  # [m]
+    bezier = BezierCurve(A, B, C, D, cutted_from_the_biggest_curvature=False)
+    return bezier.get_total_arc_length()
+
+
+def calculate_bending_stiffness_from_bezier(
+        root_dir,
+        bezier_data_path,
+        image_data_path,
+        fabric_idx,
+        draw_resolved_curve=False,
+        output_name=None,
+        cutted_from_the_biggest_curvature=True):
     '''
         G: bending stiffness [N \cdot m^2]
         K: curvature [m^{-1}]
@@ -178,10 +197,20 @@ def calculate_bending_stiffness_from_bezier(root_dir,
 
     A, B, C, D = normalize_from_pixel_to_meter(unit_cm, A, B, C, D)  # [m]
 
-    linera_rho = get_linear_density_for_specimen(root_dir)  # [kg / m]
+    linera_rho = get_linear_density_for_specimen(root_dir,
+                                                 fabric_idx)  # [kg / m]
     rho_g = 9.8 * linera_rho  # m. s^{-2}. kg. m^{-1}
-    bezier_curve = BezierCurve(A, B, C, D)
+    bezier_curve = BezierCurve(
+        A,
+        B,
+        C,
+        D,
+        cutted_from_the_biggest_curvature=cutted_from_the_biggest_curvature,
+    )
 
+    # plt.plot(bezier_curve.x_lst, bezier_curve.y_lst)
+    # plt.show()
+    # exit()
     M_lst = bezier_curve.get_Torque_lst(rho_g)
     K_lst = bezier_curve.get_curvatured_lst()
     G_lst = M_lst / K_lst
@@ -189,12 +218,11 @@ def calculate_bending_stiffness_from_bezier(root_dir,
     y = np.array(M_lst)
     x = np.array(K_lst)
     if x.shape != y.shape:
-        min_shape = min( len(y) , len(x))
+        min_shape = min(len(y), len(x))
         y = y[:min_shape]
         x = x[:min_shape]
     x = x[y > 0]
     y = y[y > 0]
-
 
     k = np.dot(x, y) / np.dot(x, x)
     if np.isnan(k):
@@ -242,18 +270,79 @@ def generate_param_lst(root_dir):
     return param_lst
 
 
-if __name__ == "__main__":
+def calculate_all_param():
     root_dir = "D:\\Projects\\弯曲测量数据"
-    # root_dir = "/home/yons/Projects/bending_measure_data"
     param_lst = generate_param_lst(root_dir)
-
-    # param_lst = param_lst[:20]
-
     for i in param_lst:
-        calculate_bending_stiffness_from_bezier(*i)
-    # from multiprocessing import Pool
-    # with Pool(10) as pool:
-    #     ret = pool.starmap(calculate_bending_stiffness_from_bezier, param_lst)
-    # for i in ret:
-    #     if i != None:
-    #         print(f"{i} solve failed")
+        print(i)
+    calculate_bending_stiffness_from_bezier(
+        *i, cutted_from_the_biggest_curvature=True)
+
+
+g = 9.81
+
+
+def calculate_specified_param():
+    root_dir = 'D:\\Projects\\弯曲测量数据\\40'
+    data_mat_lst = ['Front-0.mat', 'Front-45.mat', 'Front-90.mat']
+    img_lst = ['DSC_1726.JPG', 'DSC_1730.JPG', 'DSC_1734.JPG']
+    fabric_idx = 40
+    # root_dir = 'D:\\Projects\\弯曲测量数据\\46'
+    # data_mat_lst = ['Front-0.mat',
+    #     'Front-45.mat',
+    #     'Front-90.mat']
+    # img_lst = ['DSC_2242.JPG',
+    #         'DSC_2247.JPG',
+    #         'DSC_2251.JPG']
+    # fabric_idx = 46
+    # root_dir = 'D:\\Projects\\弯曲测量数据\\46'
+    # data_mat_lst = ['Front-0.mat',
+    #     'Front-45.mat',
+    #     'Front-90.mat']
+    # img_lst = ['DSC_2242.JPG',
+    #         'DSC_2247.JPG',
+    #         'DSC_2251.JPG']
+    # fabric_idx = 46
+    # root_dir = 'D:\\Projects\\弯曲测量数据\\133'
+    # data_mat_lst = ['Front-0.mat',
+    #     'Front-45.mat',
+    #     'Front-90.mat']
+    # img_lst = ['DSC_0460.JPG',
+    #         'DSC_0464.JPG',
+    #         'DSC_0468.JPG']
+    # fabric_idx = 133
+
+    assert len(img_lst) == len(data_mat_lst)
+    bending_stiff_lst = []
+    for i in range(len(img_lst)):
+        param = (root_dir, data_mat_lst[i], img_lst[i])
+        k = calculate_bending_stiffness_from_bezier(
+            *param,
+            fabric_idx=fabric_idx,
+            cutted_from_the_biggest_curvature=True)
+        bending_stiff_lst.append(k)
+    bending_stiff_lst = np.array(bending_stiff_lst)
+    linear_density = get_linear_density_for_specimen(root_dir, fabric_idx)
+    density = 1 / (1e-2 * get_specimen_width_cm()) * linear_density
+    bending_length_lst = 2 * np.power(bending_stiff_lst /
+                                      (linear_density * g), 1 / 3)
+    print(f"k {bending_stiff_lst}")
+    print(f"length {bending_length_lst}")
+
+    warp_sim, weft_sim, bias_sim = calculate_sim_param(
+        density * 1e3,
+        bending_length_lst[0],
+        bending_length_lst[2],
+        bending_length_lst[1],
+    )
+    warp_gui = convert_bending_simtogui(warp_sim)
+    weft_gui = convert_bending_simtogui(weft_sim)
+    bias_gui = convert_bending_simtogui(bias_sim)
+
+    print(f"sim param {warp_gui} {weft_gui} {bias_gui}")
+
+
+if __name__ == "__main__":
+
+    # calculate_all_param()
+    calculate_specified_param()
