@@ -12,7 +12,7 @@ import pickle as pkl
 
 import sys
 
-sys.path.append("../Step2FromGBToSim")
+sys.path.append("D:\Projects\Subspace\Step2FromGBToSim")
 from calculate_sim_param import calculate_sim_param, convert_bending_simtogui
 
 specimen_width = 3  # cm

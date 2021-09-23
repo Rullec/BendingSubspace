@@ -169,8 +169,10 @@ def draw_bezier(root_dir, front_image_data, front_bezier_data, back_image_data,
 
         A, B, C, D, _, given_img_path, proj2d = load_bezier_datamat(bezier)
 
-        assert given_img_path == image_data[
-            i], f".mat record {given_img_path} but now we have {image_data[i]}, dir {root_dir} in mat {bezier_data[i]}"
+        if given_img_path != image_data[i]:
+            print(
+                f"[warn] .mat record {given_img_path} but now we have {image_data[i]}, dir {root_dir} in mat {bezier_data[i]}"
+            )
 
         new_img, imshow_origin = load_captured_image(img_path, proj2d)
 
