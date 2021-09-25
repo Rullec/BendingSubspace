@@ -28,16 +28,18 @@ class BezierCurve(object):
         n: sampling number over the arc length
         '''
         for i in args:
-            assert i.size == 2, f"{len(i)}, {i}"
+            assert i.shape == (1, 2), f"{i.shape}"
 
         self.num_of_samples = n
         self.bezier_points = args
+        # print(self.num_of_samples)
+        # print(self.bezier_points)
+        # exit()
         assert len(self.bezier_points) == 4
         self.order = len(self.bezier_points) - 1
         self.u = np.expand_dims(np.linspace(0, 1, num=self.num_of_samples),
                                 axis=0)
         self.one_minus_u = 1 - self.u
-
         # calculate the points' position on the bezier curve
         self.x_lst, self.y_lst = self.__calc_discrete_point()
         # self.__cut_from_the_remotest_point()
@@ -131,13 +133,14 @@ class BezierCurve(object):
                 + 3 * c * u^2 * pow(1_minus_u, 1)
                 + d * u^3
         '''
-
         sum = None
         for i in range(self.order + 1):
-            val = Com(self.order, i) * np.dot(
-                self.bezier_points[i].T,
-                np.power(self.u, i) *
-                np.power(self.one_minus_u, self.order - i))
+            val2 = np.power(self.u, i) * np.power(self.one_minus_u,
+                                                  self.order - i)
+            print(f"iter {i} u*(1-u) = {val2}")
+            val1 = np.dot(self.bezier_points[i].T, val2)
+            print(f"iter {i} bp.T * (u*(1-u)) = {val1}")
+            val = Com(self.order, i) * val1
             if sum is None:
                 sum = val
             else:
@@ -232,7 +235,7 @@ class BezierCurve(object):
         if self.s_lst is None:
             self.get_arc_length_lst()
 
-        return list( rho_g * (np.array( self.s_lst) - self.total_arc_length))
+        return list(rho_g * (np.array(self.s_lst) - self.total_arc_length))
 
     def get_dTorquedx_new(self, rho_g):
         M = self.get_Torque_lst(rho_g)

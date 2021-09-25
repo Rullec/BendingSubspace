@@ -90,7 +90,17 @@ def display_evaluation_data(root_dir, bezier_lst, img_lst):
     return data_lst
 
 
+import pinyin
+from bezier_curve import BezierCurve
 if __name__ == "__main__":
+    A = np.array([[1, 1]])
+    B = np.array([[2, 2]])
+    C = np.array([[3, 3]])
+    D = np.array([[4, 4]])
+    curve = BezierCurve(A, B, C, D, n = 5)
+    print(f"x {curve.x_lst}")
+    print(f"y {curve.y_lst}")
+    exit()
     root_dirs = [
         r"D:\Projects\0914一维评估水平实拍\40弹力贡缎", r"D:\Projects\0914一维评估水平实拍\46丝光卡其",
         r"D:\Projects\0914一维评估水平实拍\133摇粒绒"
@@ -115,6 +125,7 @@ if __name__ == "__main__":
         name = osp.basename(root_dir)
 
         data = display_evaluation_data(root_dir, bezier_lst, img_lst)
-        output_name = f"{output_dir}/{root_base}.json"
-        json.dump(data, open(output_name, 'w'), ensure_ascii=False, indent = 4)
+        root_base_pinyin = pinyin.get(root_base, format="strip", delimiter="")
+        output_name = f"{output_dir}/{root_base_pinyin}.json"
+        json.dump(data, open(output_name, 'w'), ensure_ascii=True, indent=4)
         print(f"output to {output_name}")
