@@ -3,3 +3,8 @@
 includes/
 __pycache__/
 *output*
+*dll
+lib/
+imgui/
+build*/
+*exe
