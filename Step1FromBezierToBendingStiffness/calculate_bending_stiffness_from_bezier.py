@@ -344,5 +344,5 @@ def calculate_specified_param():
 
 if __name__ == "__main__":
 
-    # calculate_all_param()
-    calculate_specified_param()
+    calculate_all_param()
+    # calculate_specified_param()

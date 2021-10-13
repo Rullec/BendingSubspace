@@ -119,6 +119,7 @@ class Draw3D:
         self.func = func
 
 
+from operator import itemgetter
 if __name__ == "__main__":
     name_lst, idx_lst, warp_lst, weft_lst, bias_lst = get_front_data()
 
@@ -128,8 +129,25 @@ if __name__ == "__main__":
     max_axis = max(max(warp_lst), max(weft_lst), max(bias_lst))
     min_axis = min(min(warp_lst), min(weft_lst), min(bias_lst))
 
+    if True:
+        num_of_pts = len(name_lst)
+
+        selected = np.random.rand(10) * num_of_pts
+        selected = selected.astype(int)
+        selected = list(selected)
+
+        sel_warp_lst = list(itemgetter(*selected)(warp_lst))
+        sel_weft_lst = list(itemgetter(*selected)(weft_lst))
+        sel_bias_lst = list(itemgetter(*selected)(bias_lst))
+        sel_name_lst = list(itemgetter(*selected)(name_lst))
+        sel_idx_lst = list(itemgetter(*selected)(idx_lst))
+        print(sel_name_lst)
+        print(sel_idx_lst)
+        # exit()
+
     drawer = Draw3D()
     drawer.add_points(warp_lst, weft_lst, bias_lst)
+    drawer.add_points(sel_warp_lst, sel_weft_lst, sel_bias_lst, color='red')
     drawer.draw()
     # for ii in tqdm(range(0, 360, 1)):
     #     fig = plt.figure()
