@@ -1,5 +1,9 @@
 #include "RenderResource.h"
+#include "utils/FileUtil.h"
 #include "utils/LogUtil.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "utils/stb_image_write.h"
+
 cRenderResource::cRenderResource()
 {
     mHeight = 0;
@@ -14,9 +18,7 @@ void cRenderResource::Reset()
     mChannels = -1;
     mPixelData.resize(0);
 }
-#define STB_IMAGE_WRITE_IMPLEMETATION
-#include "utils/stb_image_write.h"
-#include "utils/FileUtil.h"
+
 std::vector<uint8_t> stb_export_buf;
 
 /**
@@ -112,9 +114,15 @@ void cRenderResource::ConvertFromOpencv(const cv::Mat &image)
     mHeight = image.rows;
     mWidth = image.cols;
     mChannels = 3;
+    if (image.channels() != mChannels)
+    {
+        SIM_ERROR("image depth {} != {}", image.channels(), mChannels);
+        exit(1);
+    }
     if (image.type() != CV_8UC3)
     {
         SIM_ERROR("image type {} != CV_8UC3", cOpencvUtil::type2str(image.type()));
+        exit(1);
     }
     mPixelData.resize(mHeight * mWidth * mChannels);
     for (int row_id = 0; row_id < mHeight; row_id++)
@@ -122,9 +130,9 @@ void cRenderResource::ConvertFromOpencv(const cv::Mat &image)
         {
             auto pt = image.at<cv::Vec3b>(row_id, col_id);
             int output_idx = (mHeight - 1 - row_id) * mWidth + col_id;
-            mPixelData[output_idx * 3 + 0] = float(pt[2]) / 255.0;
+            mPixelData[output_idx * 3 + 0] = float(pt[0]) / 255.0;
             mPixelData[output_idx * 3 + 1] = float(pt[1]) / 255.0;
-            mPixelData[output_idx * 3 + 2] = float(pt[0]) / 255.0;
+            mPixelData[output_idx * 3 + 2] = float(pt[2]) / 255.0;
         }
 }
 
@@ -162,4 +170,13 @@ void cRenderResource::ConvertFromAnotherResource(cRenderResourcePtr ptr)
     mHeight = ptr->mHeight, mWidth = ptr->mWidth;
     mChannels = ptr->mChannels;
     mPixelData = ptr->mPixelData;
+}
+
+void cRenderResource::ConvertFromEigen(const tMatrixXf &mat)
+{
+    mHeight = mat.rows();
+    mWidth = mat.cols();
+    this->mChannels = 1;
+    mPixelData.resize(mHeight * mWidth * mChannels);
+    memcpy(mPixelData.data(), mat.data(), sizeof(float) * mPixelData.size());
 }

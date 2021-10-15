@@ -46,7 +46,7 @@ void ResizeCallback(GLFWwindow *window, int w, int h)
 
 void ScrollCallback(GLFWwindow *window, double xoff, double yoff)
 {
-    std::cout << "scroll: x y = " << xoff << " " << yoff << std::endl;
+    // std::cout << "scroll: x y = " << xoff << " " << yoff << std::endl;
 }
 
 const char *vertexShaderSource = "#version 330 core\n"

@@ -23,6 +23,27 @@ cv::Mat cOpencvUtil::LoadGrayscalePng(std::string path)
     return img;
 }
 
+cv::Mat cOpencvUtil::LoadRGBImage(std::string path)
+{
+    SIM_ASSERT(cFileUtil::ExistsFile(path) == true);
+    // default bgr
+    cv::Mat img = cv::imread(path, cv::IMREAD_COLOR);
+    // convert to rgb
+    switch (img.channels())
+    {
+    case 3:
+        cv::cvtColor(img, img, CV_BGR2RGB);
+        break;
+    case 4:
+        cv::cvtColor(img, img, CV_BGRA2RGB);
+        break;
+
+    default:
+        SIM_ERROR("unsupported channels {}", img.channels())
+        break;
+    }
+    return img;
+}
 tMatrixXf cOpencvUtil::LoadGrayscalePngEigen(std::string path)
 {
     cv::Mat res = LoadGrayscalePng(path);
@@ -186,4 +207,14 @@ std::string cOpencvUtil::type2str(int type)
 tVector2i cOpencvUtil::GetOpencvMatSize(const cv::Mat &mat)
 {
     return tVector2i(mat.rows, mat.cols);
+}
+
+cv::Mat cOpencvUtil::ScaleDownImageToRange(const cv::Mat &img, int max_width_height)
+{
+    cv::Mat new_img = img;
+    while (cOpencvUtil::GetOpencvMatSize(new_img).maxCoeff() > max_width_height)
+    {
+        cv::pyrDown(new_img, new_img, cv::Size(new_img.cols / 2, new_img.rows / 2));
+    }
+    return new_img;
 }

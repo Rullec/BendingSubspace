@@ -2,6 +2,7 @@ set(
     bending_src
     BendingGui.cpp
     load/BendingData.cpp
+    load/BendingDataCloth.cpp
     load/BendingDataLoader.cpp
 )
 

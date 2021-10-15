@@ -3,18 +3,6 @@
 #include <iostream>
 #include <vector>
 
-bool cFileUtil::ExistsFile(const std::string &file_name)
-{
-    FILE *f = nullptr;
-    f = fopen(file_name.c_str(), "r");
-    if (f != nullptr)
-    {
-        fclose(f);
-        return true;
-    }
-    return false;
-}
-
 tMatFile *cMatlabFileUtil::OpenMatFileReadOnly(const std::string &file)
 {
     // the file must exist
@@ -98,18 +86,25 @@ tVectorXd cMatlabFileUtil::ParseAsVectorXd(tMatFile *file, std::string name)
     {
         vec[i] = data[i];
     }
+    Mat_VarFree(var);
     return vec;
 }
 
 double cMatlabFileUtil::ParseAsDouble(tMatFile *file, std::string name)
 {
     tMatVar *var = cMatlabFileUtil::ParseValue(file, name);
-    SIM_ASSERT(var->rank == 1);
-    SIM_ASSERT(var->dims[0] == 1);
+    int size = 1;
+    for (int i = 0; i < var->rank; i++)
+    {
+        size *= var->dims[i];
+    }
+    SIM_ASSERT(size == 1);
     SIM_ASSERT(MAT_C_DOUBLE == var->class_type);
 
     const double *data = static_cast<const double *>(var->data);
-    return data[0];
+    double ret = data[0];
+    Mat_VarFree(var);
+    return ret;
 }
 void cMatlabFileUtil::IterValue(tMatFile *file)
 {
@@ -121,6 +116,7 @@ void cMatlabFileUtil::IterValue(tMatFile *file)
         name_lst.push_back(std::string(cur_var->name));
         std::cout << "oh " << cur_var->name << std::endl;
     }
+    Mat_VarFree(cur_var);
 }
 
 std::string cMatlabFileUtil::ParseAsString(tMatFile *file, std::string name)
@@ -128,6 +124,7 @@ std::string cMatlabFileUtil::ParseAsString(tMatFile *file, std::string name)
     matvar_t *var = Mat_VarRead(file, name.c_str());
     size_t total_size = var->nbytes / var->data_size;
     const char *data = static_cast<const char *>(var->data);
-
-    return std::string(data);
+    std::string ret = std::string(data);
+    Mat_VarFree(var);
+    return ret;
 }

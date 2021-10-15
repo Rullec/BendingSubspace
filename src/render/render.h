@@ -32,7 +32,7 @@ protected:
     const std::string mWindowName = "SubspaceMaker";
     cRenderablePtr mRenderInterior;
     std::vector<cRenderResourcePtr> mCurRenderingResource;
-    
+
     void InitGL();
     void InitTextureAndFBO();
     void CreateTexture(GLuint &texture, std::vector<float> &texture_data, int width, int height) const;
@@ -40,7 +40,9 @@ protected:
 
     void UpdateTextureFromDepthImage(const tMatrixXi &depth_image);
     void UpdateTextureFromRenderResource(cRenderResourcePtr resource);
-    void UpdateTextureData(GLuint texture, std::vector<float *> data_array, const tEigenArr<tVector2i> &shape_array, const tEigenArr<tVector2i> &st_array);
+    void UpdateTextureData(GLuint texture, std::vector<float *> data_array,
+                           std::vector<int> channels_array,
+                           const tEigenArr<tVector2i> &shape_array, const tEigenArr<tVector2i> &st_array);
     void UpdateFBO(GLuint fbo);
 
     void Resize(int height, int width);

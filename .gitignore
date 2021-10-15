@@ -8,3 +8,4 @@ lib/
 imgui/
 build*/
 *exe
+imgui.ini

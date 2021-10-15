@@ -5,7 +5,9 @@ class cOpencvUtil
 {
 public:
     static cv::Mat LoadGrayscalePng(std::string path);
+    static cv::Mat LoadRGBImage(std::string path);
     static tMatrixXf LoadGrayscalePngEigen(std::string path);
+    static cv::Mat ScaleDownImageToRange(const cv::Mat & img, int max_width_height);
     static cv::Mat ConvertFloatArrayToRGBMat(int height, int width, float *array);
     static cv::Mat ConvertFloatArrayToGrayscaleMat(int height, int width, int input_channels, float *array);
     static void ConvertRGBMatToFloatArray(const cv::Mat &mat, int &height, int &width, std::vector<float> &array);

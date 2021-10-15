@@ -15,6 +15,7 @@
 tEigenArr<tVector2i> image_st_array;
 tEigenArr<tVector2i> image_shape_array;
 std::vector<float *> rendering_resouce_array;
+std::vector<int> channels_array;
 const int gui_height = 0;
 cRender::cRender(int height, int width) : mHeight(height), mWidth(width)
 {
@@ -74,7 +75,8 @@ void cRender::InitGL()
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
-    io.IniFilename = "";
+    io.IniFilename = "imgui.ini";
+    // io.IniFilename = "";
     // (void)io;
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
@@ -297,10 +299,20 @@ void cRender::CreateFBOFromTexture(GLuint &fbo, GLuint texture)
 
 // void cRender::UpdateTextureData(GLuint texture, float *data)
 #include "utils/LogUtil.h"
-void cRender::UpdateTextureData(GLuint texture, std::vector<float *> data_array, const tEigenArr<tVector2i> &shape_array, const tEigenArr<tVector2i> &st_array)
+void cRender::UpdateTextureData(GLuint texture, std::vector<float *> data_array,
+                                std::vector<int> channles_array,
+                                const tEigenArr<tVector2i> &shape_array, const tEigenArr<tVector2i> &st_array)
 {
     glBindTexture(GL_TEXTURE_2D, texture);
 
+    // {
+    //     std::vector<float> cur_data(200 * 200 * 3, 0.5);
+    //     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 200, 200, GL_RGB, GL_FLOAT, cur_data.data());
+    // }
+    // {
+    //     std::vector<float> cur_data(200 * 200, 0.5);
+    //     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 200, 200, GL_LUMINANCE, GL_FLOAT, cur_data.data());
+    // }
     for (int i = 0; i < shape_array.size(); i++)
     {
         int height = shape_array[i][0];
@@ -308,12 +320,17 @@ void cRender::UpdateTextureData(GLuint texture, std::vector<float *> data_array,
         int st_height = st_array[i][0];
         int st_width = st_array[i][1];
         float *data = data_array[i];
-        // printf("[debug] update texutre data at %d %d for shape %d %d\n",
-        //        st_height, st_width,
-        //        height, width);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, st_width, st_height, width, height, GL_RGB, GL_FLOAT, data);
-        // glTexSubImage2D(
-        //     GL_TEXTURE_2D, 0, 0, 0, mWidth, mHeight, GL_RGB, GL_FLOAT, data);
+        switch (channles_array[i])
+        {
+        case 1:
+            glTexSubImage2D(GL_TEXTURE_2D, 0, st_width, st_height, width, height, GL_LUMINANCE, GL_FLOAT, data);
+            break;
+        case 3:
+            glTexSubImage2D(GL_TEXTURE_2D, 0, st_width, st_height, width, height, GL_RGB, GL_FLOAT, data);
+            break;
+        default:
+            SIM_ERROR("unsupported channels num {}", channles_array[i]);
+        }
     }
 }
 
@@ -341,7 +358,7 @@ void cRender::InitTextureAndFBO()
 void cRender::PostUpdate()
 {
     // UpdateValue(data, 3);
-    UpdateTextureData(mTextureId, rendering_resouce_array, image_shape_array, image_st_array);
+    UpdateTextureData(mTextureId, rendering_resouce_array, channels_array, image_shape_array, image_st_array);
 
     // Every time you want to copy the texture to the default framebuffer.
     UpdateFBO(mFBO);
@@ -356,7 +373,6 @@ void cRender::PostUpdate()
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
         {
 
@@ -438,6 +454,7 @@ void cRender::UpdateTextureFromRenderResourceVec(std::vector<cRenderResourcePtr>
     image_st_array.clear();
     image_shape_array.clear();
     rendering_resouce_array.clear();
+    channels_array.clear();
 
     // 1. calculate the final size
     int tex_height_row0 = 0, tex_width_row0 = 0;
@@ -452,6 +469,7 @@ void cRender::UpdateTextureFromRenderResourceVec(std::vector<cRenderResourcePtr>
             tVector2i(res->mHeight, res->mWidth));
         // printf("[debug] render resource %d height %d width %d\n", i, res->mHeight, res->mWidth);
         rendering_resouce_array.push_back(res->mPixelData.data());
+        channels_array.push_back(res->mChannels);
 
         tex_height_row0 = std::max(res->mHeight, tex_height_row0);
         tex_width_row0 += res->mWidth;
@@ -475,7 +493,6 @@ void cRender::UpdateTextureFromRenderResourceVec(std::vector<cRenderResourcePtr>
 
     int tex_height = tex_height_row0 + tex_height_row1 + gui_height;
     int tex_width = std::max(tex_width_row0, tex_width_row1);
-
     if (tex_height != mHeight || tex_width != mWidth)
     {
         // printf("[debug] combined height %d width %d, resize\n", tex_height, tex_width);

@@ -14,10 +14,16 @@ SIM_DECLARE_PTR(cRender);
 cRenderPtr render = nullptr;
 int main()
 {
+    //std::cout << "--begin error code--\n";
+    //std::vector<int> lst;
+    //lst[4] = 1;
+    //std::cout << lst[4] << std::endl;
+    //std::cout << "--end error code--\n";
+
     std::string root_dir = "D:\\RealMeasureData\\BendingMeasureData";
     auto gui = std::make_shared<cBendingGui>();
     gui->Init(root_dir);
-    exit(1);
+    // exit(1);
     gWindowHeight = 600;
     gWindowWidth = 800;
 
