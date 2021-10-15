@@ -35,6 +35,8 @@ void cBendingGui::UpdateGui()
     ImGui::Combo("face", &mSelectState.mCurFaceId, {"front", "back"}, 2);
     ImGui::Spacing();
     ImGui::Combo("angle", &mSelectState.mCurAngleId, mAngleName, mAngleName.size());
+    ImGui::Spacing();
+    ImGui::Checkbox("draw_bezier", &mSelectState.mEnableDrawBezier);
     if (mSelectState.IsChanged() == true)
     {
         mSelectState.Sync();
@@ -50,7 +52,15 @@ void cBendingGui::UpdateGui()
 }
 std::vector<cRenderResourcePtr> cBendingGui::GetRenderingResource()
 {
-    return {mEmptyResource};
+    if (mRealPictureResource->IsEmpty())
+    {
+
+        return {mEmptyResource};
+    }
+    else
+    {
+        return {mRealPictureResource};
+    }
 }
 
 #include "utils/OpenCVUtil.h"
@@ -64,10 +74,14 @@ void cBendingGui::Init(std::string root_path)
     mClothName = BuildClothName(mBendingData);
     mAngleName = BuildAngleName(mBendingData);
     mEmptyResource = std::make_shared<cRenderResource>();
+    mRealPictureResource = std::make_shared<cRenderResource>();
 
     mEmptyResource->ConvertFromOpencv(cOpencvUtil::ScaleDownImageToRange(cOpencvUtil::LoadRGBImage("assets/test_screen.jpeg"), 800));
 
     mSelectState.Init();
+    mSelectState.mEnableDrawBezier = true;
+    mSelectState.Sync();
+    UpdateClothResource();
 }
 
 void cBendingGui::UpdateClothResource()
@@ -75,5 +89,19 @@ void cBendingGui::UpdateClothResource()
     auto cur_cloth = mBendingData[mSelectState.mCurClothId];
     int face_id = mSelectState.mCurFaceId;
     int angle_id = mSelectState.mCurAngleId;
-    std::cout << cur_cloth->GetDir() << " face " << face_id << " angle " << angle_id << std::endl;
+    float angle = std::stof(mAngleName[angle_id]);
+    std::cout << cur_cloth->GetDir() << " face " << face_id << " angle " << angle << " enable draw bezier " << mSelectState.mEnableDrawBezier << std::endl;
+
+    // begin to do loading
+    {
+        auto data = GetBendingData(cur_cloth, face_id, angle);
+        ;
+        cv::Mat img = data->GetPicture(mSelectState.mEnableDrawBezier);
+        // cv::Point centerCircle2(100, 200);
+        // cv::Scalar colorCircle2(0, 100, 0);
+
+        // cv::circle(img, centerCircle2, 30, colorCircle2, CV_FILLED);
+        // std::cout << img.rows << " " << img.cols << std::endl;
+        mRealPictureResource->ConvertFromOpencv(img);
+    }
 }

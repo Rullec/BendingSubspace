@@ -73,6 +73,16 @@ void cFileUtil::DeleteFile(const char *file_name)
         assert(false);
     }
 }
+void cFileUtil::RemoveFile(const char *file_name)
+{
+    bool succc = remove(file_name) == 0;
+    if (!succc)
+    {
+        printf("[error] cFileUtil::DeleteFile: Failed to delete %s!\n",
+               file_name);
+        assert(false);
+    }
+}
 
 void cFileUtil::DeleteDir(const char *dir_name)
 {

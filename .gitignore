@@ -9,3 +9,4 @@ imgui/
 build*/
 *exe
 imgui.ini
+matplotplusplus/

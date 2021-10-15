@@ -191,7 +191,8 @@ def calculate_bending_stiffness_from_bezier(
     # 1. read the bezier curve parameters (SI)
     A, B, C, D, unit_cm, img_filename, projective2d = load_bezier_datamat(
         bezier_data_path)
-
+    print(bezier_data_path, A, B, C, D)
+    exit()
     raw_A = A
     A, B, C, D = move_the_bezier_origin_and_mirror(A, B, C, D)
 
@@ -344,5 +345,6 @@ def calculate_specified_param():
 
 if __name__ == "__main__":
 
+    # BezierCurve(A, B, C, D, n = 5, cutted_from_the_biggest_curvature=False)
     calculate_all_param()
     # calculate_specified_param()

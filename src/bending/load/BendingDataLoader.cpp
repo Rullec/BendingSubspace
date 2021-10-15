@@ -73,7 +73,31 @@ std::vector<std::string> BuildAngleName(const tBendingClothArray &array)
     std::vector<std::string> string_lst(0);
     for (int i = 0; i < final_angle_lst.size(); i++)
     {
-        string_lst.push_back(std::to_string(final_angle_lst[i]));
+        string_lst.push_back(std::to_string(final_angle_lst[i]).substr(0, 5));
     }
     return string_lst;
+}
+
+std::vector<std::string> BuildFaceName()
+{
+    return gBendingDataFaceInfoStr;
+}
+
+tBendingDataPtr GetBendingData(tBendingDataClothPtr cloth, int face_mode, float angle)
+{
+    tBendingDataPtr data = nullptr;
+    switch (face_mode)
+    {
+    case eBendingDataFaceInfo::FRONT_BENDING:
+        data = cloth->GetFrontDataByAngle(angle);
+        break;
+    case eBendingDataFaceInfo::BACK_BENDING:
+        data = cloth->GetBackDataByAngle(angle);
+        break;
+
+    default:
+        SIM_ERROR("Unsupported bending data for face {} angle {}", face_mode, angle);
+        break;
+    }
+    return data;
 }

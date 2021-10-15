@@ -180,3 +180,7 @@ void cRenderResource::ConvertFromEigen(const tMatrixXf &mat)
     mPixelData.resize(mHeight * mWidth * mChannels);
     memcpy(mPixelData.data(), mat.data(), sizeof(float) * mPixelData.size());
 }
+bool cRenderResource::IsEmpty() const
+{
+    return this->mPixelData.size() == 0;
+}

@@ -14,6 +14,7 @@ public:
     static void ClearFile(const std::string &file_name);
     static void CreateFile(const std::string &file_name);
     static void DeleteFile(const char *file_name);
+    static void RemoveFile(const char *file_name);
     static void ClearDir(const char *dir_name);
     static void DeleteDir(const char *dir_name);
     static bool CreateDir(const char *dir_name);

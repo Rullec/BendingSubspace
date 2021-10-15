@@ -107,3 +107,40 @@ tVectorXf tBendingDataCloth::GetBackAngleList()
     }
     return back_angle_lst;
 }
+
+tBendingDataPtr tBendingDataCloth::GetFrontDataByIdx(int idx)
+{
+    return this->mFrontData[idx];
+}
+tBendingDataPtr tBendingDataCloth::GetBackDataByIdx(int idx)
+{
+    return mBackData[idx];
+}
+tBendingDataPtr tBendingDataCloth::GetFrontDataByAngle(float angle)
+{
+    for (auto &x : mFrontData)
+    {
+        float diff = std::fabs(x->GetWarpWeftAngle() - angle);
+
+        if (diff < 1e-3)
+        {
+            return x;
+        }
+    }
+    SIM_WARN("failed to find angle {} item in front data of {}", angle, this->mDataDir);
+    return nullptr;
+}
+tBendingDataPtr tBendingDataCloth::GetBackDataByAngle(float angle)
+{
+    for (auto &x : mBackData)
+    {
+        float diff = std::fabs(x->GetWarpWeftAngle() - angle);
+
+        if (diff < 1e-3)
+        {
+            return x;
+        }
+    }
+    SIM_WARN("failed to find angle {} item in back data of {}", angle, this->mDataDir);
+    return nullptr;
+}

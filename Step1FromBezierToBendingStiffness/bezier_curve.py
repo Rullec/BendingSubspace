@@ -137,9 +137,9 @@ class BezierCurve(object):
         for i in range(self.order + 1):
             val2 = np.power(self.u, i) * np.power(self.one_minus_u,
                                                   self.order - i)
-            print(f"iter {i} u*(1-u) = {val2}")
+            # print(f"iter {i} u*(1-u) = {val2}")
             val1 = np.dot(self.bezier_points[i].T, val2)
-            print(f"iter {i} bp.T * (u*(1-u)) = {val1}")
+            # print(f"iter {i} bp.T * (u*(1-u)) = {val1}")
             val = Com(self.order, i) * val1
             if sum is None:
                 sum = val
@@ -174,20 +174,32 @@ class BezierCurve(object):
         u2 = np.power(self.u, 2)
         A, B, C, D = self.bezier_points[0].T, self.bezier_points[
             1].T, self.bezier_points[2].T, self.bezier_points[3].T
-
+        # print(f"A {A}")
+        # print(f"B {B}")
+        # print(f"C {C}")
+        # print(f"D {D}")
+        # print(f"u {self.u}")
+        # print(f"u2 {u2}")
         # 1. get r'(t)
         r_prime = 3 * ((3 * (B - C) + D - A) * u2 + 2 *
                        (A - 2 * B + C) * self.u - A + B)
+        # print(f"r prime {r_prime}")
         # 2. get r''(t)
         r_prime2 = 6 * ((3 * (B - C) + D - A) * self.u + A - 2 * B + C)
+        # print(f"r prime2 {r_prime2}")
         r_prime2_pow3 = np.array(np.abs(np.linalg.norm(r_prime, axis=0))**3)
+        # print(f"r prime2 pow3 {r_prime2_pow3}")
 
         # 3. do cross product, and divice
         r_prime = list(r_prime.T)
         r_prime2 = list(r_prime2.T)
         rprime_cross_rprime2 = np.abs(np.cross(list(r_prime), list(r_prime2)))
-
-        return rprime_cross_rprime2 / r_prime2_pow3
+        # print(f"fenzi {rprime_cross_rprime2}")
+        # print(f"fenmu {r_prime2_pow3}")
+        K_lst = rprime_cross_rprime2 / r_prime2_pow3
+        # print(f"K_lst {rprime_cross_rprime2 / r_prime2_pow3}")
+        # exit()
+        return K_lst
 
     def get_curvatured_lst(self):
 

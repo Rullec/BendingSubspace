@@ -15,4 +15,5 @@ tBendingClothArray BuildBendingClothArray(std::string root_dir);
 
 std::vector<std::string> BuildClothName(const tBendingClothArray &array);
 std::vector<std::string> BuildAngleName(const tBendingClothArray &array);
-
+std::vector<std::string> BuildFaceName();
+tBendingDataPtr GetBendingData(tBendingDataClothPtr cloth, int face_mode, float angle);

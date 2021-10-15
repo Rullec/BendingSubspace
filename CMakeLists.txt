@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD 20)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 include_directories(./includes)
+include_directories(./matplotplusplus/source)
 
 
 if(WIN32)
@@ -19,6 +20,8 @@ if(WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4061 /wd4244 /wd4246 /wd4305 /wd4267 /wd4711 /wd4710 /wd4514 /wd4477")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W0")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /sdl-")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wv:18")
     # add_definitions(/fsanitize=address)
 endif()
 
@@ -49,12 +52,13 @@ if(GLEW_FOUND)
 endif()
 set(GL_LIBS ${GLFW3_LIBRARY} ${GLEW_STATIC_LIBRARIES} ${OPENGL_LIBRARIES})
 add_subdirectory(./src/utils)
+add_subdirectory(./matplotplusplus)
 # add_subdirectory(./src/cameras)
 add_subdirectory(./src/render)
 add_subdirectory(./src/bending)
 add_subdirectory(./imgui)
 
-set(libs utils_lib ${OpenCV_LIBS} imgui_lib render_lib bending_lib)
+set(libs utils_lib ${OpenCV_LIBS} imgui_lib render_lib bending_lib matplot)
 
 
 add_executable(main ./main.cpp)

@@ -9,6 +9,10 @@ public:
     virtual std::string GetDir() const { return mDataDir; }
     virtual tVectorXf GetFrontAngleList();
     virtual tVectorXf GetBackAngleList();
+    virtual tBendingDataPtr GetFrontDataByIdx(int idx);
+    virtual tBendingDataPtr GetBackDataByIdx(int idx);
+    virtual tBendingDataPtr GetFrontDataByAngle(float angle);
+    virtual tBendingDataPtr GetBackDataByAngle(float angle);
 
 protected:
     int mId;

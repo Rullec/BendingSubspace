@@ -93,13 +93,14 @@ def display_evaluation_data(root_dir, bezier_lst, img_lst):
 import pinyin
 from bezier_curve import BezierCurve
 if __name__ == "__main__":
-    A = np.array([[1, 1]])
-    B = np.array([[2, 2]])
-    C = np.array([[3, 3]])
-    D = np.array([[4, 4]])
+    A = np.array([[610.456, 91.6509]])
+    B = np.array([[525.888, 53.9099]])
+    C = np.array([[465.782, 227.938]])
+    D = np.array([[514.706, 501.91]])
     curve = BezierCurve(A, B, C, D, n = 5)
-    print(f"x {curve.x_lst}")
-    print(f"y {curve.y_lst}")
+    print(curve.get_Torque_lst(1))
+    # print(f"x {curve.x_lst}")
+    # print(f"y {curve.y_lst}")
     exit()
     root_dirs = [
         r"D:\Projects\0914一维评估水平实拍\40弹力贡缎", r"D:\Projects\0914一维评估水平实拍\46丝光卡其",

@@ -19,8 +19,7 @@ public:
     void ConvertFromOpencvFloat1Channel(const cv::Mat &image);
 
     virtual void DimmedByWindow(const tVector2i &st_pos, const tVector2i &window_size);
-    // virtual cv::Mat ConvertToOpencvPresent(const tVector2i &window_st,
-    //                                        const tVector2i &window_size);
+    bool IsEmpty() const;
 
     void ConvertFromAnotherResource(cRenderResourcePtr ptr);
     void Reset();

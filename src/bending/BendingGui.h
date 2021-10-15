@@ -21,27 +21,31 @@ protected:
     struct
     {
         int mCurClothId, mCurFaceId, mCurAngleId;
+        bool mEnableDrawBezier;
         void Init()
         {
             mCurClothId = 0, mCurFaceId = 0, mCurAngleId = 0;
+            mEnableDrawBezier = false;
             Sync();
         }
         bool IsChanged()
         {
-            return (mCurClothId != mBeforeClothId) || (mCurFaceId != mBeforeFaceId) || (mCurAngleId != mBeforeAngleId);
+            return (mCurClothId != mBeforeClothId) || (mCurFaceId != mBeforeFaceId) || (mCurAngleId != mBeforeAngleId) || (mEnableDrawBezier != mEnableDrawBezierBefore);
         }
         void Sync()
         {
             mBeforeClothId = mCurClothId;
             mBeforeFaceId = mCurFaceId;
             mBeforeAngleId = mCurAngleId;
+            mEnableDrawBezierBefore = mEnableDrawBezier;
         }
 
     protected:
         int mBeforeClothId, mBeforeFaceId, mBeforeAngleId;
+        bool mEnableDrawBezierBefore;
     } mSelectState;
 
-    cRenderResourcePtr mEmptyResource;
+    cRenderResourcePtr mEmptyResource, mRealPictureResource;
     void UpdateClothResource();
 };
 
