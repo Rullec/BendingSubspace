@@ -40,10 +40,13 @@ eBendingDataFaceInfo BuildFaceInfoFromSingleFilename(std::string name_)
 tBendingData::tBendingData()
 {
     mScale = 1;
+    mPixelBezier = nullptr;
+    mPhysicsBezier = nullptr;
 }
 
-void tBendingData::Init(std::string mat_path)
+void tBendingData::Init(std::string mat_path, float rho_g_SI)
 {
+    mRhoG = rho_g_SI;
     mMatPath = mat_path;
     // 1. load the mat, get the img path
     tMatFile *mat = cMatlabFileUtil::OpenMatFileReadOnly(mat_path);
@@ -52,10 +55,10 @@ void tBendingData::Init(std::string mat_path)
         std::cout << "init " << mMatPath << "failed\n";
         return;
     }
-    mBezierA = cMatlabFileUtil::ParseAsVectorXd(mat, "A").segment(0, 2);
-    mBezierB = cMatlabFileUtil::ParseAsVectorXd(mat, "B").segment(0, 2);
-    mBezierC = cMatlabFileUtil::ParseAsVectorXd(mat, "C").segment(0, 2);
-    mBezierD = cMatlabFileUtil::ParseAsVectorXd(mat, "D").segment(0, 2);
+    mBezierARaw = cMatlabFileUtil::ParseAsVectorXd(mat, "A").segment(0, 2);
+    mBezierBRaw = cMatlabFileUtil::ParseAsVectorXd(mat, "B").segment(0, 2);
+    mBezierCRaw = cMatlabFileUtil::ParseAsVectorXd(mat, "C").segment(0, 2);
+    mBezierDRaw = cMatlabFileUtil::ParseAsVectorXd(mat, "D").segment(0, 2);
 
     mUnitcm = cMatlabFileUtil::ParseAsDouble(mat, "unitCM");
     mImgPath = cMatlabFileUtil::ParseAsString(mat, "fileName");
@@ -63,6 +66,8 @@ void tBendingData::Init(std::string mat_path)
     mWarpWeftAngle = GetWarpWeftAngleFromFilename(mat_path);
     SetScale(4);
     cMatlabFileUtil::CloseMatFile(mat);
+
+    InitBezierData();
 }
 
 #include "utils/OpenCVUtil.h"
@@ -77,40 +82,25 @@ void tBendingData::ImageProject2dMatlab(cv::Mat &img) const
 #include "bezier/BezierCurvePhysics.h"
 cv::Mat tBendingData::GetPicture(bool draw_bezier) const
 {
-    std::string img_path = cFileUtil::ConcatFilename(cFileUtil::GetDir(mMatPath), mImgPath);
-    cv::Mat img = cOpencvUtil::LoadRGBImage(img_path);
-    ImageProject2dMatlab(img);
-    // std::cout << "raw img size = " << img.rows << " " << img.cols << std::endl;
-    cv::resize(img, img, cv::Size(), 1.0 / mScale, 1.0 / mScale);
-    // std::cout << "new img size = " << img.rows << " " << img.cols << std::endl;
+    // img size *= 0.5
+    cv::Mat img;
+    {
+        std::string img_path = cFileUtil::ConcatFilename(cFileUtil::GetDir(mMatPath), mImgPath);
+        img = cOpencvUtil::LoadRGBImage(img_path);
+        ImageProject2dMatlab(img);
+        cv::resize(img, img, cv::Size(), 1.0 / mScale, 1.0 / mScale);
+    }
 
     // begin to draw bezier (4 points)
     if (draw_bezier == true)
     {
         int height = img.rows;
         // Y axis need to be transformed
-        // cv::Point A(mBezierA[0], height - mBezierA[1]);
-        // cv::Point B(mBezierB[0], height - mBezierB[1]);
-        // cv::Point C(mBezierC[0], height - mBezierC[1]);
-        // cv::Point D(mBezierD[0], height - mBezierD[1]);
-        cv::Point A(mBezierA[0], height - mBezierA[1]);
-        cv::Point B(mBezierB[0], height - mBezierB[1]);
-        cv::Point C(mBezierC[0], height - mBezierC[1]);
-        cv::Point D(mBezierD[0], height - mBezierD[1]);
-        // std::cout << "scale = " << mScale << std::endl;
-        // std::cout << "raw A = " << mBezierA.transpose() << ", draw A = " << A << std::endl;
-        // std::cout << "raw B = " << mBezierB.transpose() << ", draw B = " << B << std::endl;
-        // std::cout << "raw C = " << mBezierC.transpose() << ", draw C = " << C << std::endl;
-        // std::cout << "raw D = " << mBezierD.transpose() << ", draw D = " << D << std::endl;
-        // std::cout << "mat file = " << this->mMatPath << std::endl;
-        int num_of_div = 100;
-        auto bezier = std::make_shared<cBezierCurvePhysics>(
-            num_of_div,
-            tVector2d(mBezierA[0], height - mBezierA[1]),
-            tVector2d(mBezierB[0], height - mBezierB[1]),
-            tVector2d(mBezierC[0], height - mBezierC[1]),
-            tVector2d(mBezierD[0], height - mBezierD[1]), 1);
-        tEigenArr<tVector2d> pt_lst = bezier->GetPointList();
+        cv::Point A(mBezierARaw[0], height - mBezierARaw[1]);
+        cv::Point B(mBezierBRaw[0], height - mBezierBRaw[1]);
+        cv::Point C(mBezierCRaw[0], height - mBezierCRaw[1]);
+        cv::Point D(mBezierDRaw[0], height - mBezierDRaw[1]);
+        tEigenArr<tVector2d> pt_lst = mPixelBezier->GetPointList();
         cv::circle(img, A, 7, cv::Scalar(255, 0, 0), CV_FILLED);
         cv::circle(img, B, 7, cv::Scalar(0, 255, 0), CV_FILLED);
         cv::circle(img, C, 7, cv::Scalar(0, 0, 255), CV_FILLED);
@@ -120,8 +110,6 @@ cv::Mat tBendingData::GetPicture(bool draw_bezier) const
         {
             cv::circle(img, cv::Point(pt[0], pt[1]), 3, cv::Scalar(100, 100, 100), CV_FILLED);
         }
-
-        return bezier->GetTorqueCurvatureCurve();
     }
     return img;
 }
@@ -138,12 +126,92 @@ void tBendingData::SetScale(int scale)
     else
     {
         // std::cout << "old A = " << mBezierA.transpose() << " old scale = " << mScale << std::endl;
-        mBezierA = (mBezierA * mScale) / scale;
+        mBezierARaw = (mBezierARaw * mScale) / scale;
         // std::cout << "new A = " << mBezierA.transpose() << " new scale = " << scale << std::endl;
-        mBezierB = (mBezierB * mScale) / scale;
-        mBezierC = (mBezierC * mScale) / scale;
-        mBezierD = (mBezierD * mScale) / scale;
+        mBezierBRaw = (mBezierBRaw * mScale) / scale;
+        mBezierCRaw = (mBezierCRaw * mScale) / scale;
+        mBezierDRaw = (mBezierDRaw * mScale) / scale;
         mUnitcm = (mUnitcm * mScale) / scale;
         mScale = scale;
     }
+}
+
+void tBendingData::InitBezierData()
+{
+    std::string img_path = cFileUtil::ConcatFilename(cFileUtil::GetDir(mMatPath), mImgPath);
+
+    int raw_img_height = 1080;
+
+    int transformed_img_height = 2.0 / mScale * raw_img_height;
+    // cv::Mat img = cOpencvUtil::LoadRGBImage(img_path);
+    // ImageProject2dMatlab(img);
+    // cv::resize(img, img, cv::Size(), 1.0 / mScale, 1.0 / mScale);
+
+    // transform the data points to opengl coordinates
+    int height = transformed_img_height;
+    // Y axis need to be transformed
+
+    mBezierATransformed = tVector2d(mBezierARaw[0], height - mBezierARaw[1]);
+    mBezierBTransformed = tVector2d(mBezierBRaw[0], height - mBezierBRaw[1]);
+    mBezierCTransformed = tVector2d(mBezierCRaw[0], height - mBezierCRaw[1]);
+    mBezierDTransformed = tVector2d(mBezierDRaw[0], height - mBezierDRaw[1]);
+
+    // 1. create the bezier pixel
+    // int num_of_div = 100;
+    mPixelBezier = std::make_shared<cBezierCurve>(
+        200, mBezierATransformed,
+        mBezierBTransformed,
+        mBezierCTransformed,
+        mBezierDTransformed);
+
+    // 2. create the SI physics image
+    mBezierASI = (mBezierATransformed / mUnitcm) * 1e-2;
+    mBezierBSI = (mBezierBTransformed / mUnitcm) * 1e-2;
+    mBezierCSI = (mBezierCTransformed / mUnitcm) * 1e-2;
+    mBezierDSI = (mBezierDTransformed / mUnitcm) * 1e-2;
+    // move to the origin
+    mBezierBSI -= mBezierASI;
+    mBezierCSI -= mBezierASI;
+    mBezierDSI -= mBezierASI;
+    mBezierASI -= mBezierASI;
+    // mirror
+    mBezierASI *= -1;
+    mBezierBSI *= -1;
+    mBezierCSI *= -1;
+    mBezierDSI *= -1;
+    // construct the physics bezier
+}
+
+cBezierCurvePhysicsPtr tBendingData::GetBezierPhysic()
+{
+    if (mPhysicsBezier == nullptr)
+    {
+        // std::cout << "bezier A(SI) = " << mBezierASI.transpose() << std::endl;
+        // std::cout << "bezier B(SI) = " << mBezierBSI.transpose() << std::endl;
+        // std::cout << "bezier C(SI) = " << mBezierCSI.transpose() << std::endl;
+        // std::cout << "bezier D(SI) = " << mBezierDSI.transpose() << std::endl;
+        mPhysicsBezier = std::make_shared<cBezierCurvePhysics>(
+            200,
+            mBezierASI,
+            mBezierBSI,
+            mBezierCSI,
+            mBezierDSI,
+            mRhoG);
+    }
+    return mPhysicsBezier;
+}
+
+cBezierCurvePhysicsPtr tBendingData::GetBezierPhysicCutted()
+{
+    if (mPhysicsBezierCuttedFromHighestPoint == nullptr)
+    {
+        mPhysicsBezierCuttedFromHighestPoint = std::make_shared<cBezierCurvePhysics>(
+            200,
+            mBezierASI,
+            mBezierBSI,
+            mBezierCSI,
+            mBezierDSI,
+            mRhoG, true);
+    }
+    return mPhysicsBezierCuttedFromHighestPoint;
 }

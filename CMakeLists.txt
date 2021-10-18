@@ -5,11 +5,8 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include(./cmake/configure_movecmd.cmake)
 set(CMAKE_CXX_STANDARD 20)
 
-
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 include_directories(./includes)
-include_directories(./matplotplusplus/source)
-
 
 if(WIN32)
 	include_directories(includes)
@@ -51,15 +48,15 @@ if(GLEW_FOUND)
 	include_directories(${GLEW_INCLUDE_DIRS})
 endif()
 set(GL_LIBS ${GLFW3_LIBRARY} ${GLEW_STATIC_LIBRARIES} ${OPENGL_LIBRARIES})
+
+# find implot
+
 add_subdirectory(./src/utils)
-add_subdirectory(./matplotplusplus)
-# add_subdirectory(./src/cameras)
 add_subdirectory(./src/render)
 add_subdirectory(./src/bending)
 add_subdirectory(./imgui)
 
-set(libs utils_lib ${OpenCV_LIBS} imgui_lib render_lib bending_lib matplot)
-
+set(libs utils_lib ${OpenCV_LIBS} imgui_lib render_lib bending_lib ${python_libs}) 
 
 add_executable(main ./main.cpp)
 target_link_libraries(main ${GL_LIBS} ${libs})

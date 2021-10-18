@@ -218,3 +218,4 @@ cv::Mat cOpencvUtil::ScaleDownImageToRange(const cv::Mat &img, int max_width_hei
     }
     return new_img;
 }
+

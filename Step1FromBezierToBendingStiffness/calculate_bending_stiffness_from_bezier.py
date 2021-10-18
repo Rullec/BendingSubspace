@@ -191,8 +191,7 @@ def calculate_bending_stiffness_from_bezier(
     # 1. read the bezier curve parameters (SI)
     A, B, C, D, unit_cm, img_filename, projective2d = load_bezier_datamat(
         bezier_data_path)
-    print(bezier_data_path, A, B, C, D)
-    exit()
+    # print(f"raw A {A} B {B} C {C} D {D} unitCM {unit_cm}")
     raw_A = A
     A, B, C, D = move_the_bezier_origin_and_mirror(A, B, C, D)
 
@@ -201,6 +200,9 @@ def calculate_bending_stiffness_from_bezier(
     linera_rho = get_linear_density_for_specimen(root_dir,
                                                  fabric_idx)  # [kg / m]
     rho_g = 9.8 * linera_rho  # m. s^{-2}. kg. m^{-1}
+    # print(f"for data {bezier_data_path}")
+    # print(f"new A {A} B {B} C {C} D {D} unitCM {unit_cm}")
+    # exit()
     bezier_curve = BezierCurve(
         A,
         B,
@@ -230,6 +232,8 @@ def calculate_bending_stiffness_from_bezier(
         assert len(y) == 0
         print(f"all curvature is negative, set this value to 0")
         k = 0
+    print(bezier_data_path, k)
+    # exit()
     # -------------- done, the below code are used to resolve the diff eq-----------
     if draw_resolved_curve == True:
         img, origin_mode = load_captured_image(image_data_path, projective2d)
@@ -272,12 +276,19 @@ def generate_param_lst(root_dir):
 
 
 def calculate_all_param():
-    root_dir = "D:\\Projects\\弯曲测量数据"
+    root_dir = "D:\\RealMeasureData\\BendingMeasureData"
     param_lst = generate_param_lst(root_dir)
-    for i in param_lst:
-        print(i)
-    calculate_bending_stiffness_from_bezier(
-        *i, cutted_from_the_biggest_curvature=True)
+    for param in param_lst:
+        root_dir, bezier_data_path, image_data_path, output_name = param
+        fabric_idx = int(root_dir.split("\\")[-1])
+        calculate_bending_stiffness_from_bezier(
+            root_dir,
+            bezier_data_path,
+            image_data_path,
+            fabric_idx,
+            output_name=output_name,
+            cutted_from_the_biggest_curvature=True)
+    exit()
 
 
 g = 9.81

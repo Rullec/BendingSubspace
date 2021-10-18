@@ -10,3 +10,5 @@ build*/
 *exe
 imgui.ini
 matplotplusplus/
+DLLs/
+tcl/

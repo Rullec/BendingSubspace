@@ -3,6 +3,7 @@
 #include <iostream>
 #include "utils/DefUtil.h"
 #include "imgui.h"
+#include "implot.h"
 #include "backends\imgui_impl_glfw.h"
 #include "backends\imgui_impl_opengl3.h"
 #include "RenderResource.h"
@@ -24,7 +25,8 @@ cRender::~cRender()
 {
     // ImGui_ImplOpenGL3_Shutdown();
     // ImGui_ImplGlfw_Shutdokwn();
-    // ImGui::DestroyContext();
+    ImPlot::DestroyContext();
+    ImGui::DestroyContext();
 }
 void cRender::InitGL()
 {
@@ -74,6 +76,7 @@ void cRender::InitGL()
     // ------------------ add imgui code -------------------
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+    ImPlot::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
     io.IniFilename = "imgui.ini";
     // io.IniFilename = "";
@@ -377,7 +380,10 @@ void cRender::PostUpdate()
         {
 
             if (mRenderInterior != nullptr)
+            {
                 mRenderInterior->UpdateGui();
+                mRenderInterior->UpdatePlot();
+            }
         }
 
         // Rendering
@@ -493,9 +499,12 @@ void cRender::UpdateTextureFromRenderResourceVec(std::vector<cRenderResourcePtr>
 
     int tex_height = tex_height_row0 + tex_height_row1 + gui_height;
     int tex_width = std::max(tex_width_row0, tex_width_row1);
-    if (tex_height != mHeight || tex_width != mWidth)
+
+    int screen_height = tex_height + 300;
+    int screen_width = tex_width + 600;
+    if (screen_height != mHeight || screen_width != mWidth)
     {
         // printf("[debug] combined height %d width %d, resize\n", tex_height, tex_width);
-        Resize(tex_height, tex_width);
+        Resize(screen_height, screen_width);
     }
 }

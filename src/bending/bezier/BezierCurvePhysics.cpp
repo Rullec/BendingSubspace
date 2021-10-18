@@ -2,48 +2,30 @@
 
 cBezierCurvePhysics::cBezierCurvePhysics(int num_of_div, const tVector2d &A,
                                          const tVector2d &B, const tVector2d &C,
-                                         const tVector2d &D, double rho_g)
+                                         const tVector2d &D, double rho_g, bool cutted_from_highest_point /*= false*/)
     :
 
       cBezierCurve(num_of_div, A, B, C, D), mRhoG(rho_g)
 {
     mTorqueList = CalculateTorque();
+    if (cutted_from_highest_point == true)
+    {
+        CutFromHighestPoint();
+        CutToNegativeCurvaturePoint();
+    }
+
+    SetMlist(mTorqueCurvatureCurve, mTorqueList);
+    SetKlist(mTorqueCurvatureCurve, mCurvatureList);
 }
 tVectorXd cBezierCurvePhysics::GetTorqueList() const
 {
     return mTorqueList;
 }
-// #include "matplot/matplot.h"
-#include "matplot\\matplot.h"
 #include "utils/FileUtil.h"
 #include "utils/TimeUtil.hpp"
-cv::Mat cBezierCurvePhysics::GetTorqueCurvatureCurve() const
+tMKCurve cBezierCurvePhysics::GetTorqueCurvatureCurve() const
 {
-    // rendered by result
-    // mTorqueList: num_of_seg
-    // mK: num_of_div
-    int num_of_seg = mNumOfDiv - 1;
-
-    std::vector<double> x(num_of_seg), y(num_of_seg);
-    for (int i = 0; i < num_of_seg; i++)
-    {
-        x[i] = mCurvatureList[i];
-        y[i] = mTorqueList[i];
-    }
-    // memcpy(x.data(), mCurvatureList.data(), sizeof(double) * num_of_seg);
-    // memcpy(y.data(), mTorqueList.data(), sizeof(double) * num_of_seg);
-    std::string save_img = "tmp.png";
-    matplot::plot(x, y);
-    matplot::save(save_img);
-    Sleep(30);
-    // matplot::wait();
-
-    // exit(0);
-    cv::Mat img = cOpencvUtil::LoadRGBImage(save_img);
-    // cFileUtil::RemoveFile(save_img);
-    // matplot::show();
-    // exit(1);
-    return img;
+    return mTorqueCurvatureCurve;
 }
 
 tVectorXd cBezierCurvePhysics::CalculateTorque() const
@@ -69,4 +51,71 @@ tVectorXd cBezierCurvePhysics::CalculateTorque() const
     // std::cout << "torque list = " << ret.transpose() << std::endl;
     // exit(1);
     return ret;
+}
+
+void cBezierCurvePhysics::CutFromHighestPoint()
+{
+    // 1. get the highest point
+    double max_value = -1e10;
+    int max_value_idx = -1;
+    for (int i = 0; i < mPosY.size(); i++)
+    {
+        if (mPosY[i] > max_value)
+        {
+            max_value = mPosY[i];
+            max_value_idx = i;
+        }
+    }
+    int cutted_from_idx = int(mNumOfDiv - 0.9 * (mNumOfDiv - max_value_idx));
+    printf("highest idx %d, cutted idx %d\n", max_value_idx, cutted_from_idx);
+    // std::cout << "Y = " << mPosY.transpose() << std::endl;
+
+    // cutted
+    int raw_size = mNumOfDiv;
+    mNumOfDiv = raw_size - cutted_from_idx;
+    mPosY = mPosY.segment(cutted_from_idx, mNumOfDiv).eval();                       // N
+    mPosX = mPosX.segment(cutted_from_idx, mNumOfDiv).eval();                       // N
+    mArclengthList = mArclengthList.segment(cutted_from_idx, mNumOfDiv - 1).eval(); // N - 1
+    mCurvatureList = mCurvatureList.segment(cutted_from_idx, mNumOfDiv).eval();     // N
+    mU = mU.segment(cutted_from_idx, mNumOfDiv).eval();                             // N
+    mOneMinusU = mOneMinusU.segment(cutted_from_idx, mNumOfDiv).eval();             // N
+    mTorqueList = mTorqueList.segment(cutted_from_idx, mNumOfDiv).eval();           // N
+    // cut the curvature list and
+}
+
+void cBezierCurvePhysics::CutToNegativeCurvaturePoint()
+{
+    int cutted_to_idx = mNumOfDiv - 1;
+    for (int idx = 0; idx < mNumOfDiv; idx++)
+    {
+        if (mTorqueList[idx] < 0)
+        {
+            cutted_to_idx = idx;
+            break;
+        }
+    }
+    int raw_size = mNumOfDiv;
+    mNumOfDiv = cutted_to_idx + 1;
+    mPosY = mPosY.segment(0, mNumOfDiv).eval();                       // N
+    mPosX = mPosX.segment(0, mNumOfDiv).eval();                       // N
+    mArclengthList = mArclengthList.segment(0, mNumOfDiv - 1).eval(); // N - 1
+    mCurvatureList = mCurvatureList.segment(0, mNumOfDiv).eval();     // N
+    mU = mU.segment(0, mNumOfDiv).eval();                             // N
+    mOneMinusU = mOneMinusU.segment(0, mNumOfDiv).eval();             // N
+    mTorqueList = mTorqueList.segment(0, mNumOfDiv).eval();
+}
+
+/**
+ * \brief               Get Estimated bending stiffness
+*/
+tBendingStiffnessPtr cBezierCurvePhysics::GetEstimatedBendingStiffness()
+{
+    if (mBendingStiffness == nullptr)
+    {
+        tMKCurve curve;
+        SetMlist(curve, this->mTorqueList);
+        SetKlist(curve, this->mCurvatureList);
+        mBendingStiffness = std::make_shared<tBendingStiffness>(curve);
+    }
+    return mBendingStiffness;
 }

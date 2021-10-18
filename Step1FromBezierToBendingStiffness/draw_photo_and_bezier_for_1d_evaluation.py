@@ -93,15 +93,21 @@ def display_evaluation_data(root_dir, bezier_lst, img_lst):
 import pinyin
 from bezier_curve import BezierCurve
 if __name__ == "__main__":
-    A = np.array([[610.456, 91.6509]])
-    B = np.array([[525.888, 53.9099]])
-    C = np.array([[465.782, 227.938]])
-    D = np.array([[514.706, 501.91]])
-    curve = BezierCurve(A, B, C, D, n = 5)
-    print(curve.get_Torque_lst(1))
-    # print(f"x {curve.x_lst}")
-    # print(f"y {curve.y_lst}")
-    exit()
+    # unit_cm = 38.923 * 2
+    # A = np.array([[610.456, 91.6509]]) / unit_cm * 1e-2
+    # B = np.array([[525.888, 53.9099]]) / unit_cm * 1e-2
+    # C = np.array([[465.782, 227.938]]) / unit_cm * 1e-2
+    # D = np.array([[514.706, 501.91]]) / unit_cm * 1e-2
+    # curve = BezierCurve(A, B, C, D, n=200)
+    # rho_g = 0.117
+    # torque_lst = curve.get_Torque_lst(rho_g)
+    # K_lst = curve.get_curvatured_lst()
+    # plt.plot(K_lst, torque_lst)
+    # plt.show()
+    # # print(curve.get_Torque_lst(1))
+    # # print(f"x {curve.x_lst}")
+    # # print(f"y {curve.y_lst}")
+    # exit()
     root_dirs = [
         r"D:\Projects\0914一维评估水平实拍\40弹力贡缎", r"D:\Projects\0914一维评估水平实拍\46丝光卡其",
         r"D:\Projects\0914一维评估水平实拍\133摇粒绒"

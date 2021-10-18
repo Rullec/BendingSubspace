@@ -20,11 +20,11 @@ protected:
     // tVectorXf mDrawBuffer;
     int mNumOfDiv;
     tVector2d A, B, C, D;
-    tMatrixXd mPointList;
-    tVectorXd mCurvatureList;
-    tVectorXd mArclengthList;
-    tVectorXd mU, mOneMinusU;
-    tVectorXd mPosX, mPosY;
+    tMatrixXd mPointList;     // N
+    tVectorXd mCurvatureList; // N
+    tVectorXd mArclengthList; // N - 1
+    tVectorXd mU, mOneMinusU; // N
+    tVectorXd mPosX, mPosY;   // N
     virtual void InitPointlist(tMatrixXd &point_lst);
     virtual tVectorXd CalculateCurvature() const;
     virtual tVectorXd CalculateArcLengthList() const;

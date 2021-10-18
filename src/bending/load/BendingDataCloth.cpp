@@ -33,26 +33,39 @@ bool GetFrontAndBackMat(std::string root_dir,
     return failed;
 }
 
-bool CompareMat(std::string img_path0, std::string img_path1)
-{
-    double angle0 = GetWarpWeftAngleFromFilename(img_path0);
-    double angle1 = GetWarpWeftAngleFromFilename(img_path1);
-    return angle0 < angle1;
-}
+// bool CompareMat(std::string img_path0, std::string img_path1)
+// {
+//     double angle0 = GetWarpWeftAngleFromFilename(img_path0);
+//     double angle1 = GetWarpWeftAngleFromFilename(img_path1);
+//     return angle0 < angle1;
+// }
 
 tBendingDataCloth::tBendingDataCloth()
 {
 }
 
-bool tBendingDataCloth::Init(std::string data_dir)
+bool tBendingDataCloth::Init(std::string data_dir, const std::map<int, double> &density_map)
 {
     mDataDir = data_dir;
+
     // begin to init
     // 1. parse the index
     std::string subdir_single = cFileUtil::GetFilename(data_dir);
     auto res = cRegexUtil::FindAllMatch(subdir_single, "^[0-9]+");
     SIM_ASSERT(res.size() == 1);
     mId = std::stoi(res[0]);
+    {
+        auto iter = density_map.find(mId);
+        if (iter == density_map.end())
+        {
+            SIM_ERROR("failed to find cloth {} info in density map", mId);
+        }
+        else
+        {
+            mRhoG = iter->second * 9.81;
+            // std::cout << "rhog = " << mRhoG << std::endl;
+        }
+    }
     // 2. create the front and back data
     std::vector<std::string> front_paths, back_paths;
     if (true == GetFrontAndBackMat(data_dir, front_paths, back_paths))
@@ -62,27 +75,32 @@ bool tBendingDataCloth::Init(std::string data_dir)
     }
 
     // 2. split them into front and backs
-    std::sort(front_paths.begin(), front_paths.end(), CompareMat);
-    std::sort(back_paths.begin(), back_paths.end(), CompareMat);
     SIM_ASSERT(front_paths.size() == back_paths.size());
 
-    //
-    mFrontData.clear();
-    mBackData.clear();
+    mFrontData.resize(front_paths.size());
+    mBackData.resize(back_paths.size());
 
+    OMP_PARALLEL_FOR
     for (int i = 0; i < front_paths.size(); i++)
     {
         auto data = std::make_shared<tBendingData>();
-        data->Init(cFileUtil::ConcatFilename(mDataDir, front_paths[i]));
-        mFrontData.push_back(data);
+        data->Init(cFileUtil::ConcatFilename(mDataDir, front_paths[i]), mRhoG);
+        mFrontData[i] = data;
     }
-
+    OMP_PARALLEL_FOR
     for (int i = 0; i < back_paths.size(); i++)
     {
         auto data = std::make_shared<tBendingData>();
-        data->Init(cFileUtil::ConcatFilename(mDataDir, back_paths[i]));
-        mBackData.push_back(data);
+        data->Init(cFileUtil::ConcatFilename(mDataDir, back_paths[i]), mRhoG);
+        mBackData[i] = data;
     }
+
+    auto data_sort = [](const tBendingDataPtr &ptr0, const tBendingDataPtr &ptr1)
+    {
+        return ptr0->GetWarpWeftAngle() < ptr1->GetWarpWeftAngle();
+    };
+    std::sort(mFrontData.begin(), mFrontData.end(), data_sort);
+    std::sort(mBackData.begin(), mBackData.end(), data_sort);
 
     return true;
 }
@@ -143,4 +161,9 @@ tBendingDataPtr tBendingDataCloth::GetBackDataByAngle(float angle)
     }
     SIM_WARN("failed to find angle {} item in back data of {}", angle, this->mDataDir);
     return nullptr;
+}
+
+double tBendingDataCloth::GetRhoG() const
+{
+    return this->mRhoG;
 }

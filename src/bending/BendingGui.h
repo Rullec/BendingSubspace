@@ -9,8 +9,9 @@ class cBendingGui : public cRenderable
 public:
     explicit cBendingGui();
     virtual void Init(std::string root_path);
-    virtual void UpdateGui();
+    virtual void UpdateGui() override;
     virtual std::vector<cRenderResourcePtr> GetRenderingResource() override;
+    virtual void UpdatePlot() override;
 
 protected:
     std::string mRawBendingDataRootDir;
@@ -45,8 +46,15 @@ protected:
         bool mEnableDrawBezierBefore;
     } mSelectState;
 
+    bool mEnableDrawMK; // enable to draw torque-curvature relationship
     cRenderResourcePtr mEmptyResource, mRealPictureResource;
+    tVectorXf mBendingTorqueRawList, mBendingCurvatureRawList;
+    tVectorXf mBendingTorqueCutList, mBendingCurvatureCutList;
+    float mLinearBendingStiffness;
+    float mNonLinearBendingStiffness_2ndterm, mNonLinearBendingStiffness_1stterm;
+
     void UpdateClothResource();
+    tBendingDataPtr GetCurData();
 };
 
 SIM_DECLARE_PTR(cBendingGui);
