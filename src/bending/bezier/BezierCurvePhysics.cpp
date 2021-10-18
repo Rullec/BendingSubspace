@@ -2,7 +2,9 @@
 
 cBezierCurvePhysics::cBezierCurvePhysics(int num_of_div, const tVector2d &A,
                                          const tVector2d &B, const tVector2d &C,
-                                         const tVector2d &D, double rho_g, bool cutted_from_highest_point /*= false*/)
+                                         const tVector2d &D, double rho_g, bool cutted_from_highest_point /*= false*/,
+                                         bool cutted_to_zero_curvature_point /* = false*/
+                                         )
     :
 
       cBezierCurve(num_of_div, A, B, C, D), mRhoG(rho_g)
@@ -11,9 +13,11 @@ cBezierCurvePhysics::cBezierCurvePhysics(int num_of_div, const tVector2d &A,
     if (cutted_from_highest_point == true)
     {
         CutFromHighestPoint();
+    }
+    if (cutted_to_zero_curvature_point)
+    {
         CutToNegativeCurvaturePoint();
     }
-
     SetMlist(mTorqueCurvatureCurve, mTorqueList);
     SetKlist(mTorqueCurvatureCurve, mCurvatureList);
 }
@@ -73,13 +77,22 @@ void cBezierCurvePhysics::CutFromHighestPoint()
     // cutted
     int raw_size = mNumOfDiv;
     mNumOfDiv = raw_size - cutted_from_idx;
-    mPosY = mPosY.segment(cutted_from_idx, mNumOfDiv).eval();                       // N
-    mPosX = mPosX.segment(cutted_from_idx, mNumOfDiv).eval();                       // N
+    mPosY = mPosY.segment(cutted_from_idx, mNumOfDiv).eval(); // N
+    mPosX = mPosX.segment(cutted_from_idx, mNumOfDiv).eval(); // N
+    for (int i = mNumOfDiv - 1; i >= 0; i--)
+    {
+        mPosX[i] -= mPosX[0];
+        mPosY[i] -= mPosY[0];
+    }
     mArclengthList = mArclengthList.segment(cutted_from_idx, mNumOfDiv - 1).eval(); // N - 1
-    mCurvatureList = mCurvatureList.segment(cutted_from_idx, mNumOfDiv).eval();     // N
-    mU = mU.segment(cutted_from_idx, mNumOfDiv).eval();                             // N
-    mOneMinusU = mOneMinusU.segment(cutted_from_idx, mNumOfDiv).eval();             // N
-    mTorqueList = mTorqueList.segment(cutted_from_idx, mNumOfDiv).eval();           // N
+    for (int i = mArclengthList.size() - 1; i >= 0; i--)
+    {
+        mArclengthList[i] -= mArclengthList[0];
+    }
+    mCurvatureList = mCurvatureList.segment(cutted_from_idx, mNumOfDiv).eval(); // N
+    mU = mU.segment(cutted_from_idx, mNumOfDiv).eval();                         // N
+    mOneMinusU = mOneMinusU.segment(cutted_from_idx, mNumOfDiv).eval();         // N
+    mTorqueList = mTorqueList.segment(cutted_from_idx, mNumOfDiv).eval();       // N
     // cut the curvature list and
 }
 
@@ -118,4 +131,12 @@ tBendingStiffnessPtr cBezierCurvePhysics::GetEstimatedBendingStiffness()
         mBendingStiffness = std::make_shared<tBendingStiffness>(curve);
     }
     return mBendingStiffness;
+}
+
+/**
+ * \brief               Get rho * G
+*/
+double cBezierCurvePhysics::GetRhoG() const
+{
+    return this->mRhoG;
 }

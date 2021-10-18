@@ -12,13 +12,15 @@ class cBezierCurvePhysics : public cBezierCurve
 public:
     explicit cBezierCurvePhysics(int num_of_div, const tVector2d &A,
                                  const tVector2d &B, const tVector2d &C,
-                                 const tVector2d &D, double rho_g, bool cutted_from_highest_point = false);
+                                 const tVector2d &D, double rho_g, bool cutted_from_highest_point = false,
+                                 bool cutted_to_zero_curvature_point = false);
     virtual tVectorXd GetTorqueList() const;
     virtual tMKCurve GetTorqueCurvatureCurve() const;
     virtual tBendingStiffnessPtr GetEstimatedBendingStiffness();
+    virtual double GetRhoG() const;
 
 protected:
-    tVectorXd mTorqueList;                  // torque list, calculate frm given linear density "rho * g"
+    tVectorXd mTorqueList; // torque list, calculate frm given linear density "rho * g"
     tMKCurve mTorqueCurvatureCurve;
     tBendingStiffnessPtr mBendingStiffness; // bending stiffness data
     double mRhoG;                           // rho * g

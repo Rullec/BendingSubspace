@@ -95,22 +95,30 @@ def shoot_solve_normalzed(beta, theta0, t0, stepsize, silent=True):
     # plt.plot(x_, y_)
     # plt.show()
     err_cur, x__, y__ = solve_guess_IVP_normalized(beta, theta0, x0, y0, t_cur)
-
+    print(f"err prev = {err_prev}")
+    print(f"err cur = {err_cur}")
+    # exit()
     if np.abs(err_prev) < eps:
         return x_, y_
     elif np.abs(err_cur) < eps:
         return x__, y__
 
     # 2. calculate the f(t0) and f(t1)
-    max_shooting = 5000
+    max_shooting = 3
     min_err = 1e10
     min_err_x = []
     min_err_y = []
     for k in range(2, max_shooting + 1):
-        t_cur = t_cur - stepsize * err_cur * (t_cur - t_prev) / (err_cur -
-                                                                 err_prev)
+        print(
+            f"[py] stepsize {stepsize}, err {err_cur}, dt {t_cur - t_prev}, de = {err_cur - err_prev} "
+        )
+        delta_t = -stepsize * err_cur * (t_cur - t_prev) / (err_cur - err_prev)
+        print(f"[py] delta t = {delta_t}")
+        t_cur = t_cur + delta_t
+
         err_cur, x_, y_ = solve_guess_IVP_normalized(beta, theta0, x0, y0,
                                                      t_cur)
+        print(f"[py] iter {k} new t {t_cur} err_cur {err_cur}")
         if silent is False:
             if k % 10 == 0 or err_cur < eps:
                 print(f"[debug] iter {k} t {t_cur} t0 {t0}, error {err_cur}")
@@ -120,7 +128,7 @@ def shoot_solve_normalzed(beta, theta0, t0, stepsize, silent=True):
             min_err = err_cur
             min_err_x = x_
             min_err_y = y_
-
+    exit()
     if k == max_shooting:
         print(f"[error] solve failed, get min err {min_err} > eps {eps}")
         return min_err_x, min_err_y

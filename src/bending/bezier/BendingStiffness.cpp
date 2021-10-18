@@ -73,7 +73,12 @@ float tBendingStiffness::CreateLinearBendingStiffness() const
     tVectorXf K_lst = GetKlist(this->mRawMKCurve);
     float k = M_lst.dot(K_lst) / (K_lst.dot(
                                      K_lst));
-    std::cout << "linear k = " << k << std::endl;
+    // double thre = 5e-8;
+    // if (k < thre)
+    // {
+    //     std::cout << "[warn] linear k = " << k << "was revised to " << thre << std::endl;
+    //     k = thre;
+    // }
     return k;
 }
 

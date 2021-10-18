@@ -102,7 +102,8 @@ def draw_bending_curve(bezier_curve, k, rho_g, unit_cm, img, raw_A,
     # print(f"begin to solve")
     theta_lst = bezier_curve.get_theta_lst()
     theta0 = theta_lst[0]
-
+    # print(f"k = {k}, rho*G {rho_g}")
+    # exit()
     # convert G from kg.s^{-2}.m^3 -> g.cm.s^{-2}.cm^2
     new_k = 1e9 * k
     # convert rho * g from kg.s^{-2} to g.s^{-2}
@@ -123,6 +124,14 @@ def draw_bending_curve(bezier_curve, k, rho_g, unit_cm, img, raw_A,
     if k < 3e-7:
         stepsize *= 0.1
     beta = -1 * new_rho_g * (L**3) / new_k
+    print(f"new k {new_k}")
+    print(f"new rho_g {new_rho_g}")
+    print(f"L {L}")
+    print(f"stepsize {stepsize}")
+    print(f"beta {beta}")
+    print(f"theta0 {theta0}")
+    print(f"t0 {t0}")
+    # exit()
     view_x, view_y = shoot_solve_normalzed(beta, theta0, t0, stepsize)  # [cm]
 
     # print(
@@ -235,10 +244,10 @@ def calculate_bending_stiffness_from_bezier(
     print(bezier_data_path, k)
     # exit()
     # -------------- done, the below code are used to resolve the diff eq-----------
-    if draw_resolved_curve == True:
-        img, origin_mode = load_captured_image(image_data_path, projective2d)
-        draw_bending_curve(bezier_curve, k, rho_g, unit_cm, img, raw_A,
-                           output_name, origin_mode)
+    # if draw_resolved_curve == True:
+    img, origin_mode = load_captured_image(image_data_path, projective2d)
+    draw_bending_curve(bezier_curve, k, rho_g, unit_cm, img, raw_A,
+                        output_name, origin_mode)
 
     # assemble the info matrix
     return k

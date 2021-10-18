@@ -15,12 +15,13 @@ public:
     virtual double GetTotalLength() const;
     virtual int GetNumOfDrawEdges() const;
     virtual tEigenArr<tVector2d> GetPointList();
+    virtual double GetInitTheta() const;
 
 protected:
     // tVectorXf mDrawBuffer;
     int mNumOfDiv;
     tVector2d A, B, C, D;
-    tMatrixXd mPointList;     // N
+    // tMatrixXd mPointList;     // N
     tVectorXd mCurvatureList; // N
     tVectorXd mArclengthList; // N - 1
     tVectorXd mU, mOneMinusU; // N

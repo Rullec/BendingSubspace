@@ -25,31 +25,12 @@ cBezierCurve::cBezierCurve(int num_of_div, const tVector2d &A,
     : A(A), B(B), C(C), D(D), mNumOfDiv(num_of_div)
 {
     // init the edge buffer
-    InitPointlist(mPointList);
-    mPosX = mPointList.row(0);
-    mPosY = mPointList.row(1);
+    tMatrixXd point_lst;
+    InitPointlist(point_lst);
+    mPosX = point_lst.row(0);
+    mPosY = point_lst.row(1);
     mCurvatureList = CalculateCurvature();
     mArclengthList = CalculateArcLengthList();
-    // std::cout << "arclength = " << mArclengthList.transpose() << std::endl;
-    // exit(1);
-    // printf("point shape %d, %d\n", mPointList.rows(), mPointList.cols());
-    // mPointList.row(0) = GetLinspace(0, 1, mNumOfDiv);
-    // mPointList.row(1) = GetLinspace(0, 1, mNumOfDiv);
-
-    // int st = 0;
-    // int num_of_edges = GetNumOfDrawEdges();
-    // int num_of_vertices = num_of_edges * 2;
-    // int buffer_size = num_of_vertices * RENDERING_SIZE_PER_VERTICE;
-    // mDrawBuffer.noalias() = tVectorXf::Zero(buffer_size);
-    // Eigen::Map<tVectorXf> map(mDrawBuffer.data(), mDrawBuffer.size());
-    // for (int i = 0; i < mNumOfDiv - 1; i++)
-    // {
-    //     tVector st_pos = tVector(0, mPointList(0, i), mPointList(1, i), 0);
-    //     tVector ed_pos =
-    //         tVector(0, mPointList(0, i + 1), mPointList(1, i + 1), 0);
-    //     CalcEdgeDrawBufferSingle(st_pos, ed_pos, tVector::Zero(), map, st,
-    //                              tVector3f::Zero());
-    // }
 }
 
 int cBezierCurve::GetNumOfDrawEdges() const { return mNumOfDiv - 1; }
@@ -99,9 +80,10 @@ void cBezierCurve::InitPointlist(tMatrixXd &point_lst)
 double cBezierCurve::GetTotalLength() const
 {
     double total_length = 0;
-    for (int i = 0; i < this->mPointList.cols() - 1; i++)
+    for (int i = 0; i < this->mPosX.size() - 1; i++)
     {
-        total_length += (mPointList.col(i + 1) - mPointList.col(i)).norm();
+        tVector2d vec = tVector2d(mPosX[i + 1] - mPosX[i], mPosY[i + 1] - mPosY[i]);
+        total_length += vec.norm();
     }
     return total_length;
 }
@@ -109,9 +91,9 @@ double cBezierCurve::GetTotalLength() const
 tEigenArr<tVector2d> cBezierCurve::GetPointList()
 {
     tEigenArr<tVector2d> pt_lst(0);
-    for (int i = 0; i < this->mPointList.cols(); i++)
+    for (int i = 0; i < this->mPosX.size(); i++)
     {
-        pt_lst.push_back(mPointList.col(i));
+        pt_lst.push_back(tVector2d(mPosX[i], mPosY[i]));
     }
     return pt_lst;
 }
@@ -188,9 +170,28 @@ tVectorXd cBezierCurve::CalculateCurvature() const
     return K_lst;
 }
 
+/**
+ * \brief           part of the initialization, calculate the arclength of each segment
+*/
 tVectorXd cBezierCurve::CalculateArcLengthList() const
 {
     int num_of_seg = mNumOfDiv - 1;
-    tVectorXd arc_length_lst = (mPointList.block(0, 0, 2, num_of_seg) - mPointList.block(0, 1, 2, num_of_seg)).colwise().norm();
-    return arc_length_lst;
+    // tVectorXd arc_length_lst = (mPointList.block(0, 0, 2, num_of_seg) - mPointList.block(0, 1, 2, num_of_seg)).colwise().norm();
+    tVectorXd vec(num_of_seg);
+    for (int i = 0; i < num_of_seg; i++)
+    {
+        vec[i] = tVector2d(mPosX[i + 1] - mPosX[i], mPosY[i + 1] - mPosY[i]).norm();
+    }
+    return vec;
+}
+
+/**
+ * \brief           create init theta 
+*/
+double cBezierCurve::GetInitTheta() const
+{
+    double x0 = mPosX[0], y0 = mPosY[0];
+    double x1 = mPosX[1], y1 = mPosY[1];
+    double theta = std::atan2(y1 - y0, x1 - x0);
+    return theta;
 }

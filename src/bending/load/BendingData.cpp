@@ -108,7 +108,7 @@ cv::Mat tBendingData::GetPicture(bool draw_bezier) const
 
         for (auto &pt : pt_lst)
         {
-            cv::circle(img, cv::Point(pt[0], pt[1]), 3, cv::Scalar(100, 100, 100), CV_FILLED);
+            cv::circle(img, cv::Point(pt[0], pt[1]), 2, cv::Scalar(150, 0, 24), CV_FILLED);
         }
     }
     return img;
@@ -201,17 +201,34 @@ cBezierCurvePhysicsPtr tBendingData::GetBezierPhysic()
     return mPhysicsBezier;
 }
 
-cBezierCurvePhysicsPtr tBendingData::GetBezierPhysicCutted()
+cBezierCurvePhysicsPtr tBendingData::GetBezierPhysicCuttedFromHighest()
 {
-    if (mPhysicsBezierCuttedFromHighestPoint == nullptr)
+
+    if (mPhysicsBezier_CuttedFromHighestPoint_ == nullptr)
     {
-        mPhysicsBezierCuttedFromHighestPoint = std::make_shared<cBezierCurvePhysics>(
+        mPhysicsBezier_CuttedFromHighestPoint_ = std::make_shared<cBezierCurvePhysics>(
             200,
             mBezierASI,
             mBezierBSI,
             mBezierCSI,
             mBezierDSI,
-            mRhoG, true);
+            mRhoG, true, false);
     }
-    return mPhysicsBezierCuttedFromHighestPoint;
+    return mPhysicsBezier_CuttedFromHighestPoint_;
+}
+
+cBezierCurvePhysicsPtr tBendingData::GetBezierPhysic_CuttedFromHighest_ToZeroCurvature()
+{
+
+    if (mPhysicsBezier_CuttedFromHighestPoint_ToZeroCurvaturePoint == nullptr)
+    {
+        mPhysicsBezier_CuttedFromHighestPoint_ToZeroCurvaturePoint = std::make_shared<cBezierCurvePhysics>(
+            200,
+            mBezierASI,
+            mBezierBSI,
+            mBezierCSI,
+            mBezierDSI,
+            mRhoG, true, true);
+    }
+    return mPhysicsBezier_CuttedFromHighestPoint_ToZeroCurvaturePoint;
 }

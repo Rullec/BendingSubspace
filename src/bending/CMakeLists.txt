@@ -16,6 +16,8 @@ set(
     bezier/BezierCurve.cpp
     bezier/BezierCurvePhysics.cpp
     bezier/BendingStiffness.cpp
+    bezier/BezierShootSolver.cpp
+    bezier/BezierShootSolver2.cpp
 )
 
 add_library(bending_lib ${bending_src})

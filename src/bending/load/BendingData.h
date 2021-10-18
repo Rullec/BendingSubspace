@@ -31,7 +31,8 @@ public:
     virtual int GetScale() const;
     virtual void SetScale(int scale);
     virtual cBezierCurvePhysicsPtr GetBezierPhysic();
-    virtual cBezierCurvePhysicsPtr GetBezierPhysicCutted();
+    virtual cBezierCurvePhysicsPtr GetBezierPhysicCuttedFromHighest();
+    virtual cBezierCurvePhysicsPtr GetBezierPhysic_CuttedFromHighest_ToZeroCurvature();
     virtual double GetRhoG() const { return mRhoG; }
     virtual double GetUnitCM() const { return mUnitcm; }
 
@@ -46,9 +47,10 @@ protected:
     tVector2d mBezierATransformed, mBezierBTransformed, mBezierCTransformed, mBezierDTransformed; // bezier points fitted for opengl rendering coords
     tVector2d mBezierASI, mBezierBSI, mBezierCSI, mBezierDSI;
     double mUnitcm;
-    cBezierCurvePtr mPixelBezier;                                // bezier curve in pixel coords
-    cBezierCurvePhysicsPtr mPhysicsBezier;                       // bezier curve in SI format
-    cBezierCurvePhysicsPtr mPhysicsBezierCuttedFromHighestPoint; // bezier curve in SI format, and cutted from highest
+    cBezierCurvePtr mPixelBezier;                                                    // bezier curve in pixel coords
+    cBezierCurvePhysicsPtr mPhysicsBezier;                                           // bezier curve in SI format
+    cBezierCurvePhysicsPtr mPhysicsBezier_CuttedFromHighestPoint_;                    // bezier curve in SI format, and cutted from highest
+    cBezierCurvePhysicsPtr mPhysicsBezier_CuttedFromHighestPoint_ToZeroCurvaturePoint; // bezier curve in SI format, and cutted from highest
     double mRhoG;
     void ImageProject2dMatlab(cv::Mat &img) const;
     void InitBezierData();

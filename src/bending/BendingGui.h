@@ -50,9 +50,11 @@ protected:
     cRenderResourcePtr mEmptyResource, mRealPictureResource;
     tVectorXf mBendingTorqueRawList, mBendingCurvatureRawList;
     tVectorXf mBendingTorqueCutList, mBendingCurvatureCutList;
-    float mLinearBendingStiffness;
-    float mNonLinearBendingStiffness_2ndterm, mNonLinearBendingStiffness_1stterm;
-
+    float mLinearBendingStiffness;                                                // estimated linear bending stiffness
+    float mNonLinearBendingStiffness_2ndterm, mNonLinearBendingStiffness_1stterm; // estimated nonlinear bending stiffness
+    tVectorXd mSolvedX, mSolveY;                                                  // solved x_lst and y_lst
+    double mBeta;                                                                 // variable in linear shooting method
+    double mM, mN;                                                                // variable in nonlinear shooting method
     void UpdateClothResource();
     tBendingDataPtr GetCurData();
 };
