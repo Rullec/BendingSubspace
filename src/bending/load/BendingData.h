@@ -51,7 +51,7 @@ protected:
     cBezierCurvePhysicsPtr mPhysicsBezier;                                           // bezier curve in SI format
     cBezierCurvePhysicsPtr mPhysicsBezier_CuttedFromHighestPoint_;                    // bezier curve in SI format, and cutted from highest
     cBezierCurvePhysicsPtr mPhysicsBezier_CuttedFromHighestPoint_ToZeroCurvaturePoint; // bezier curve in SI format, and cutted from highest
-    double mRhoG;
+    double mRhoG, mRho;
     void ImageProject2dMatlab(cv::Mat &img) const;
     void InitBezierData();
 };

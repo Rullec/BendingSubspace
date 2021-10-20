@@ -26,21 +26,24 @@ public:
         const tMKCurve &mkcurve);
     float GetLinearBendingStiffness();
     void GetNonLinearBendingStiffness(float &a, float &b);
+    void GetNonLinearBendingStiffnessWithConstant(float &a, float &b, float & c);
     const tMKCurve &GetLinear_FittedMKList() const;
     const tMKCurve &GetNonLinear_FittedMKList() const;
+    const tMKCurve &GetNonLinear_FittedMKList_withconstant() const;
 
 protected:
-    tMKCurve mRawMKCurve, mFitMKCurve_linear, mFitMKCurve_nonlinear;
+    tMKCurve mRawMKCurve, mFitMKCurve_linear, mFitMKCurve_nonlinear, mFitMKCurve_nonlinear_withconstant;
     float mKmin, mKmax; // curvature K range [min, max], used to calculate the fitted curve
     // the linera formula: M = a * K
     float mLinearBendingStiffness;
-    // the nonlinera formula: M = a * K^2 + bK
-    float mNonLinearBendingStiffness_a, mNonLinearBendingStiffness_b;
+    // the nonlinera formula: M = a * K^2 + bK + (c)
+    float mNonLinearBendingStiffness_a, mNonLinearBendingStiffness_b, mNonLinearBendingStiffness_c;
 
     float CreateLinearBendingStiffness() const;
-    void CreateNonLinearBendingStiffness(float &k1, float &k2) const;
+    void CreateNonLinearBendingStiffness(float &k1, float &k2, float & constant_useless) const;
     void CreateFittedList_Linear(tMKCurve &mk_curve) const;
     void CreateFittedList_Nonlinear(tMKCurve &mk_curve) const;
+    void CreateFittedList_Nonlinear_withconstant(tMKCurve &mk_curve) const;
 };
 
 SIM_DECLARE_PTR(tBendingStiffness);

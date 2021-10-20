@@ -107,6 +107,7 @@ void cBezierCurvePhysics::CutToNegativeCurvaturePoint()
             break;
         }
     }
+    
     int raw_size = mNumOfDiv;
     mNumOfDiv = cutted_to_idx + 1;
     mPosY = mPosY.segment(0, mNumOfDiv).eval();                       // N

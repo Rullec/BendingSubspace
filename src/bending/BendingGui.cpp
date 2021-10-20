@@ -49,6 +49,13 @@ void cBendingGui::UpdateGui()
         ImGui::Checkbox("selct k1 nonlinear", &mSelectState.mSelectK1InNonlinearSolver);
     }
     ImGui::Spacing();
+    auto export_now = ImGui::Button("Export(Non)LinearParam");
+    ImGui::Spacing();
+    if (export_now)
+    {
+        std::cout << "now export to "
+                  << " tmp.json\n";
+    }
     {
         auto data = GetCurData();
         ImGui::Text("rho*G = %.3f, unitCM = %.3f, scale = %d", data->GetRhoG(), data->GetUnitCM(), data->GetScale());
@@ -139,9 +146,15 @@ void cBendingGui::UpdateClothResource()
         std::cout << "linear bs = " << linear_bs << std::endl;
         double rho_g = cutted_bezier_short->GetRhoG();
         std::cout << "rho*G = " << rho_g << std::endl;
+        std::cout << "img path = " << data->GetImgPath() << std::endl;
+        std::cout << "mat path = " << data->GetMatPath() << std::endl;
+        std::cout << "rho = " << data->GetRhoG() / 9.81 << std::endl;
 
         double total_arclength = data->GetBezierPhysicCuttedFromHighest()->GetTotalLength();
         std::cout << "total_arclength = " << total_arclength << std::endl;
+        // std::cout << "torque = " << data->GetBezierPhysic()->GetTorqueList() << std::endl;
+        // std::cout << "torque/(rho * g) = " << data->GetBezierPhysic()->GetTorqueList() / data->GetBezierPhysic()->GetRhoG() << std::endl;
+        // exit(1);
         // exit(1);
         // double beta = -rho_g * std::pow(total_arclength, 3) / (linear_bs);
         double beta = rho_g * std::pow(total_arclength, 3) / (linear_bs);
@@ -153,8 +166,8 @@ void cBendingGui::UpdateClothResource()
         // 3. calculate t
         double t0 = 0;
         {
-            double k_min = 1e-10;
-            double k_max = 1e-5;
+            double k_min = 1e-8;
+            double k_max = 1e-4;
             // std::cout << "linear bs = " << linear_bs << std::endl;
             SIM_ASSERT(linear_bs > k_min);
             SIM_ASSERT(linear_bs < k_max);
@@ -251,46 +264,61 @@ void cBendingGui::UpdatePlot()
     // ImPlot::SetNextPlotLimitsX(-0.1, 0.1);
     // ImPlot::SetNextPlotLimitsY(-0.15, 0.05);
 
-    if (mEnableDrawMK == true)
+    // if (mEnableDrawMK == true)
     {
+        ImPlot::BeginSubplots("Subplots xudong", 2, 1, ImVec2(300, 600));
+
         auto data = GetCurData();
-        if (ImPlot::BeginPlot("plot", "curvature", "torque", ImVec2(300, 300), ImPlotFlags_Equal))
+        // if (ImPlot::BeginPlot("plot", "curvature", "torque", ImVec2(300, 300), ImPlotFlags_Equal))
+        if (ImPlot::BeginPlot("MK", "curvature(K)", "torque(M)", ImVec2(300, 300)))
         {
 
             // 1. draw the M-K curve
 
             // 1. get the M-K relationship from the bending data
-            // plot the raw bezier
-            // {
-            //     auto bezier_phy = data->GetBezierPhysic();
-
-            //     tMKCurve curve = bezier_phy->GetTorqueCurvatureCurve();
-            //     PlotCurve("raw", curve);
-            // }
-
-            // // plot the cutted
-            // {
-            //     auto bezier_phy_cutted = data->GetBezierPhysic_CuttedFromHighest_ToZeroCurvature();
-
-            //     tMKCurve curve = bezier_phy_cutted->GetTorqueCurvatureCurve();
-            //     PlotCurve("cutted_raw", curve);
-            // }
-
-            // // plot the linear stiffness fitted curve (from cutted result)
-            // {
-            //     auto bezier_phy_cutted = data->GetBezierPhysic_CuttedFromHighest_ToZeroCurvature();
-            //     auto bending_stiffness = bezier_phy_cutted->GetEstimatedBendingStiffness();
-            //     tMKCurve curve = bending_stiffness->GetLinear_FittedMKList();
-            //     PlotCurve("linear_fit", curve);
-            // }
-            // {
-            //     auto bezier_phy_cutted = data->GetBezierPhysic_CuttedFromHighest_ToZeroCurvature();
-            //     auto bending_stiffness = bezier_phy_cutted->GetEstimatedBendingStiffness();
-            //     tMKCurve curve = bending_stiffness->GetNonLinear_FittedMKList();
-            //     PlotCurve("nonlinear_fit", curve);
-            // }
-            // 2. draw the solved M-K curve
             {
+                // plot the raw bezier
+                {
+                    auto bezier_phy = data->GetBezierPhysic();
+
+                    tMKCurve curve = bezier_phy->GetTorqueCurvatureCurve();
+                    PlotCurve("raw", curve);
+                }
+
+                // plot the cutted
+                // {
+                //     auto bezier_phy_cutted = data->GetBezierPhysic_CuttedFromHighest_ToZeroCurvature();
+
+                //     tMKCurve curve = bezier_phy_cutted->GetTorqueCurvatureCurve();
+                //     PlotCurve("cutted_raw", curve);
+                // }
+
+                // plot the linear stiffness fitted curve (from cutted result)
+                {
+                    auto bezier_phy_cutted = data->GetBezierPhysic_CuttedFromHighest_ToZeroCurvature();
+                    auto bending_stiffness = bezier_phy_cutted->GetEstimatedBendingStiffness();
+                    tMKCurve curve = bending_stiffness->GetLinear_FittedMKList();
+                    PlotCurve("linear_fit", curve);
+                }
+                // {
+                //     auto bezier_phy_cutted = data->GetBezierPhysic_CuttedFromHighest_ToZeroCurvature();
+                //     auto bending_stiffness = bezier_phy_cutted->GetEstimatedBendingStiffness();
+                //     tMKCurve curve = bending_stiffness->GetNonLinear_FittedMKList();
+                //     PlotCurve("nonlinear_fit", curve);
+                // }
+                {
+                    auto bezier_phy_cutted = data->GetBezierPhysic_CuttedFromHighest_ToZeroCurvature();
+                    auto bending_stiffness = bezier_phy_cutted->GetEstimatedBendingStiffness();
+                    tMKCurve curve = bending_stiffness->GetNonLinear_FittedMKList_withconstant();
+                    PlotCurve("nonlinear_fit_(c)", curve);
+                }
+                ImPlot::EndPlot();
+            }
+            // 2. draw the solved M-K curve
+
+            if (ImPlot::BeginPlot("shoot result", "X", "Y", ImVec2(300, 300), ImPlotFlags_Equal))
+            {
+
                 ImPlot::PlotLine("shoot", mSolvedX.data(), mSolveY.data(), mSolvedX.size());
 
                 auto pt_lst = GetCurData()->GetBezierPhysicCuttedFromHighest()->GetPointList();
@@ -301,11 +329,12 @@ void cBendingGui::UpdatePlot()
                     Yraw[i] = pt_lst[i][1];
                 }
                 ImPlot::PlotLine("raw", Xraw.data(), Yraw.data(), Xraw.size());
+                ImPlot::EndPlot();
             }
         }
     }
 
-    ImPlot::EndPlot();
+    ImPlot::EndSubplots();
 }
 
 tBendingDataPtr cBendingGui::GetCurData()

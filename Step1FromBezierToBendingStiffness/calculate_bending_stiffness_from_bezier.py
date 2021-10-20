@@ -69,7 +69,8 @@ def get_linear_density_for_specimen(fabric_dir, idx):
         for line in lines[1:]:
             id = int(line[0])
             weight = float(line[2])  # weight for specimen
-            linear_rho = (weight * 1e-3) / (specimen_length * 1e-2)  # [kg / m]
+            linear_rho = (weight * 1e-3) / (
+                specimen_length * 1e-2 * specimen_width * 1e-2)  # [kg / m]
             linear_density_dict[id] = linear_rho
         linear_density_dict["comment"] = f"the width is {specimen_width}"
         with open(rho_file, 'wb') as f:
@@ -247,7 +248,7 @@ def calculate_bending_stiffness_from_bezier(
     # if draw_resolved_curve == True:
     img, origin_mode = load_captured_image(image_data_path, projective2d)
     draw_bending_curve(bezier_curve, k, rho_g, unit_cm, img, raw_A,
-                        output_name, origin_mode)
+                       output_name, origin_mode)
 
     # assemble the info matrix
     return k
