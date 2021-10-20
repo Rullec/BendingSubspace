@@ -16,6 +16,7 @@ public:
     virtual int GetNumOfDrawEdges() const;
     virtual tEigenArr<tVector2d> GetPointList();
     virtual double GetInitTheta() const;
+    virtual tVectorXd GetCurvatureList() const;
 
 protected:
     // tVectorXf mDrawBuffer;

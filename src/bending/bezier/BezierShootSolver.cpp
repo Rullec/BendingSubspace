@@ -302,94 +302,94 @@ double solve_guess_IVP_normalized_nonlinear(double m, double n, double theta0, d
     return err;
 }
 
-double cBezierShootSolver::ShootNonLinearSolve(double m, double n, double theta0, double t0, double stepsize,
-                                               tVectorXd &x_lst_solved,
-                                               tVectorXd &y_lst_solved, bool silent)
-{
-    double t1 = 0.99 * t0;
-    double eps = 1e-3;
-    double x0 = 0, y0 = 0;
+// double cBezierShootSolver::ShootNonLinearSolve(double m, double n, double theta0, double t0, double stepsize,
+//                                                tVectorXd &x_lst_solved,
+//                                                tVectorXd &y_lst_solved, bool silent)
+// {
+//     double t1 = 0.99 * t0;
+//     double eps = 1e-3;
+//     double x0 = 0, y0 = 0;
 
-    double t_prev = t0;
-    double t_cur = t1;
+//     double t_prev = t0;
+//     double t_cur = t1;
 
-    // give 2 shoot at first (warm start for newton method)
-    tVectorXd x_lst_prev, y_lst_prev;
-    tVectorXd x_lst_cur, y_lst_cur;
-    double err_prev = solve_guess_IVP_normalized_nonlinear(
-        m, n, theta0, x0, y0, t_prev, x_lst_prev, y_lst_prev);
-    double err_cur = solve_guess_IVP_normalized_nonlinear(
-        m, n, theta0, x0, y0, t_cur, x_lst_cur, y_lst_cur);
-    // std::cout << "err prev = " << err_prev << std::endl;
-    // std::cout << "err cur = " << err_cur << std::endl;
+//     // give 2 shoot at first (warm start for newton method)
+//     tVectorXd x_lst_prev, y_lst_prev;
+//     tVectorXd x_lst_cur, y_lst_cur;
+//     double err_prev = solve_guess_IVP_normalized_nonlinear(
+//         m, n, theta0, x0, y0, t_prev, x_lst_prev, y_lst_prev);
+//     double err_cur = solve_guess_IVP_normalized_nonlinear(
+//         m, n, theta0, x0, y0, t_cur, x_lst_cur, y_lst_cur);
+//     // std::cout << "err prev = " << err_prev << std::endl;
+//     // std::cout << "err cur = " << err_cur << std::endl;
 
-    if (std::fabs(err_prev) < eps)
-    {
-        x_lst_solved = x_lst_prev;
-        y_lst_solved = y_lst_prev;
-        return err_prev;
-    }
-    if (std::fabs(err_cur) < eps)
-    {
-        x_lst_solved = x_lst_cur;
-        y_lst_solved = y_lst_cur;
-        return err_cur;
-    }
+//     if (std::fabs(err_prev) < eps)
+//     {
+//         x_lst_solved = x_lst_prev;
+//         y_lst_solved = y_lst_prev;
+//         return err_prev;
+//     }
+//     if (std::fabs(err_cur) < eps)
+//     {
+//         x_lst_solved = x_lst_cur;
+//         y_lst_solved = y_lst_cur;
+//         return err_cur;
+//     }
 
-    // if these two shots are not good, begin to iter
-    int max_shooting = 2000;
-    double min_err = 1e10;
-    tVectorXd min_err_x, min_err_y;
-    tVectorXd x_tmp, y_tmp;
+//     // if these two shots are not good, begin to iter
+//     int max_shooting = 2000;
+//     double min_err = 1e10;
+//     tVectorXd min_err_x, min_err_y;
+//     tVectorXd x_tmp, y_tmp;
 
-    int k = 0;
-    for (k = 0; k < max_shooting + 1; k++)
-    {
-        // std::cout << "[cpp] old t = " << t_cur << ", stepsize = " << stepsize << ", err_cur = " << err_cur << " dt = " << (t_cur - t_prev) << ", de = " << (err_cur - err_prev) << std::endl;
-        double dt = -stepsize * err_cur * (t_cur - t_prev) / (err_cur - err_prev);
-        // std::cout << "[cpp] Delta t = " << dt << std::endl;
-        // t_prev = t_cur;
-        t_cur = t_cur + dt;
-        if (m < 0)
-        {
-            t_cur = std::min(t_cur, -n * n / (4 * m));
-        }
+//     int k = 0;
+//     for (k = 0; k < max_shooting + 1; k++)
+//     {
+//         // std::cout << "[cpp] old t = " << t_cur << ", stepsize = " << stepsize << ", err_cur = " << err_cur << " dt = " << (t_cur - t_prev) << ", de = " << (err_cur - err_prev) << std::endl;
+//         double dt = -stepsize * err_cur * (t_cur - t_prev) / (err_cur - err_prev);
+//         // std::cout << "[cpp] Delta t = " << dt << std::endl;
+//         // t_prev = t_cur;
+//         t_cur = t_cur + dt;
+//         if (m < 0)
+//         {
+//             t_cur = std::min(t_cur, -n * n / (4 * m));
+//         }
 
-        // std::cout << "[cpp] new t = " << t_cur << std::endl;
-        // err_prev = err_cur;
-        err_cur = solve_guess_IVP_normalized_nonlinear(m, n, theta0, x0, y0, t_cur, x_tmp, y_tmp);
+//         // std::cout << "[cpp] new t = " << t_cur << std::endl;
+//         // err_prev = err_cur;
+//         err_cur = solve_guess_IVP_normalized_nonlinear(m, n, theta0, x0, y0, t_cur, x_tmp, y_tmp);
 
-        // std::cout << "[cpp] iter " << k << " new t = " << t_cur << " err_cur " << err_cur << std::endl;
-        if (silent == false)
-        {
-            if ((k % 500 == 0) || err_cur < eps)
-            {
-                std::cout << "[debug] iter " << k << " t " << t_cur << ", t0 = " << t0 << " err = " << err_cur << std::endl;
-                ;
-            }
-        }
-        if (err_cur < min_err)
-        {
-            min_err = err_cur;
-            min_err_x = x_tmp;
-            min_err_y = y_tmp;
-        }
-        if (err_cur < eps)
-            break;
-    }
-    // exit(1);
-    if (k == max_shooting)
-    {
-        printf("[error] solved failed, get min err %.3f > eps %.3f\n", min_err, eps);
+//         // std::cout << "[cpp] iter " << k << " new t = " << t_cur << " err_cur " << err_cur << std::endl;
+//         if (silent == false)
+//         {
+//             if ((k % 500 == 0) || err_cur < eps)
+//             {
+//                 std::cout << "[debug] iter " << k << " t " << t_cur << ", t0 = " << t0 << " err = " << err_cur << std::endl;
+//                 ;
+//             }
+//         }
+//         if (err_cur < min_err)
+//         {
+//             min_err = err_cur;
+//             min_err_x = x_tmp;
+//             min_err_y = y_tmp;
+//         }
+//         if (err_cur < eps)
+//             break;
+//     }
+//     // exit(1);
+//     if (k == max_shooting)
+//     {
+//         printf("[error] solved failed, get min err %.3f > eps %.3f\n", min_err, eps);
 
-        x_lst_solved = min_err_x;
-        y_lst_solved = min_err_y;
-    }
-    else
-    {
-        x_lst_solved = min_err_x;
-        y_lst_solved = min_err_y;
-    }
+//         x_lst_solved = min_err_x;
+//         y_lst_solved = min_err_y;
+//     }
+//     else
+//     {
+//         x_lst_solved = min_err_x;
+//         y_lst_solved = min_err_y;
+//     }
 
-    return min_err;
-}
+//     return min_err;
+// }

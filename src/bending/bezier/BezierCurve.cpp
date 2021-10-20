@@ -195,3 +195,8 @@ double cBezierCurve::GetInitTheta() const
     double theta = std::atan2(y1 - y0, x1 - x0);
     return theta;
 }
+
+tVectorXd cBezierCurve::GetCurvatureList() const
+{
+    return this->mCurvatureList;
+}

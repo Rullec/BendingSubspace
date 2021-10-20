@@ -41,6 +41,13 @@ void cBendingGui::UpdateGui()
     ImGui::Checkbox("draw_bezier", &mSelectState.mEnableDrawBezier);
     ImGui::SameLine();
     ImGui::Checkbox("Torque-Curvature plot", &mEnableDrawMK);
+    ImGui::SameLine();
+    ImGui::Checkbox("Enable nonlinear", &mSelectState.mEnableNonlinearSolve);
+    if (mSelectState.mEnableNonlinearSolve)
+    {
+        ImGui::SameLine();
+        ImGui::Checkbox("selct k1 nonlinear", &mSelectState.mSelectK1InNonlinearSolver);
+    }
     ImGui::Spacing();
     {
         auto data = GetCurData();
@@ -102,6 +109,7 @@ void cBendingGui::Init(std::string root_path)
 
     mSelectState.Init();
     mSelectState.mEnableDrawBezier = true;
+    mSelectState.mEnableNonlinearSolve = true;
     mSelectState.mCurClothId = 0;
     mSelectState.Sync();
     UpdateClothResource();
@@ -147,7 +155,7 @@ void cBendingGui::UpdateClothResource()
         {
             double k_min = 1e-10;
             double k_max = 1e-5;
-            std::cout << "linear bs = " << linear_bs << std::endl;
+            // std::cout << "linear bs = " << linear_bs << std::endl;
             SIM_ASSERT(linear_bs > k_min);
             SIM_ASSERT(linear_bs < k_max);
 
@@ -155,16 +163,35 @@ void cBendingGui::UpdateClothResource()
             t0 = std::min(t0, 0.3) / total_arclength;
         }
         mBeta = beta;
-        std::cout << "beta = " << beta << std::endl;
-        std::cout << "theta0 = " << theta0 << std::endl;
-        std::cout << "t0 = " << t0 << std::endl;
+        // std::cout << "beta = " << beta << std::endl;
+        // std::cout << "theta0 = " << theta0 << std::endl;
+        // std::cout << "t0 = " << t0 << std::endl;
         // exit(1);
-        double stepsize = 1e-1;
+        // double stepsize = 1e-1;
         // double beta, double theta0, int num_of_samples, tVectorXd &x_solved,
         // tVectorXd &y_solved
-        double min_err = cBezierShootSolver::ShootLinearSolveWenchao(beta, theta0, 2000, mSolvedX, mSolveY);
-        mSolvedX *= total_arclength;
-        mSolveY *= total_arclength;
+
+        // linear
+        if (mSelectState.mEnableNonlinearSolve == false)
+        {
+            double min_err = cBezierShootSolver::ShootLinearSolveRobust(beta, theta0, 2000, mSolvedX, mSolveY);
+            mSolvedX *= total_arclength;
+            mSolveY *= total_arclength;
+        }
+
+        else
+        {
+            std::cout << "[nonlinear] init curvature = " << cutted_bezier_short->GetCurvatureList()[0] << std::endl;
+            float a = 0, b = 0;
+            bending_stiffness->GetNonLinearBendingStiffness(a, b);
+            cBezierShootSolver::ShootNonLinearSolveRobustNormalized(rho_g, a, b, total_arclength, theta0, 2000, mSolvedX, mSolveY, mSelectState.mSelectK1InNonlinearSolver);
+            // nonlinear
+            // double m = 2 * a / (rho_g * std::pow(total_arclength, 4)), n = b / (rho_g * std::pow(total_arclength, 3));
+
+            // cBezierShootSolver::ShootNonLinearSolveRobust(m, n, theta0, 2000, mSolvedX, mSolveY);
+            // mSolvedX *= total_arclength;
+            // mSolveY *= total_arclength;
+        }
     }
     // {
     //     auto cutted_bezier_short = data->GetBezierPhysic_CuttedFromHighest_ToZeroCurvature();
@@ -221,13 +248,13 @@ void LogYPlotCurve(std::string title, const tMKCurve &curve)
 
 void cBendingGui::UpdatePlot()
 {
-    ImPlot::SetNextPlotLimitsX(-0.1, 0.1);
-    ImPlot::SetNextPlotLimitsY(-0.15, 0.05);
+    // ImPlot::SetNextPlotLimitsX(-0.1, 0.1);
+    // ImPlot::SetNextPlotLimitsY(-0.15, 0.05);
 
     if (mEnableDrawMK == true)
     {
         auto data = GetCurData();
-        if (ImPlot::BeginPlot("plot", "curvature", "torque", ImVec2(300, 300)))
+        if (ImPlot::BeginPlot("plot", "curvature", "torque", ImVec2(300, 300), ImPlotFlags_Equal))
         {
 
             // 1. draw the M-K curve

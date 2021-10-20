@@ -23,15 +23,20 @@ protected:
     {
         int mCurClothId, mCurFaceId, mCurAngleId;
         bool mEnableDrawBezier;
+        bool mEnableNonlinearSolve;
+        bool mSelectK1InNonlinearSolver; // select K1 in nonlinear shooting method solver
         void Init()
         {
             mCurClothId = 0, mCurFaceId = 0, mCurAngleId = 0;
             mEnableDrawBezier = false;
+            mEnableNonlinearSolve = false;
+            mSelectK1InNonlinearSolver = true;
             Sync();
         }
         bool IsChanged()
         {
-            return (mCurClothId != mBeforeClothId) || (mCurFaceId != mBeforeFaceId) || (mCurAngleId != mBeforeAngleId) || (mEnableDrawBezier != mEnableDrawBezierBefore);
+            return (mCurClothId != mBeforeClothId) || (mCurFaceId != mBeforeFaceId) || (mCurAngleId != mBeforeAngleId) || (mEnableDrawBezier != mEnableDrawBezierBefore) || (mEnableNonlinearSolve != mEnableNonlinearSolveBefore) ||
+                   (mSelectK1InNonlinearSolver != mSelectK1InNonlinearSolverBefore);
         }
         void Sync()
         {
@@ -39,11 +44,13 @@ protected:
             mBeforeFaceId = mCurFaceId;
             mBeforeAngleId = mCurAngleId;
             mEnableDrawBezierBefore = mEnableDrawBezier;
+            mEnableNonlinearSolveBefore = mEnableNonlinearSolve;
+            mSelectK1InNonlinearSolverBefore = mSelectK1InNonlinearSolver;
         }
 
     protected:
         int mBeforeClothId, mBeforeFaceId, mBeforeAngleId;
-        bool mEnableDrawBezierBefore;
+        bool mEnableDrawBezierBefore, mEnableNonlinearSolveBefore, mSelectK1InNonlinearSolverBefore;
     } mSelectState;
 
     bool mEnableDrawMK; // enable to draw torque-curvature relationship
