@@ -65,6 +65,7 @@ protected:
     void UpdateClothResource();
     tBendingDataPtr GetCurData();
     void ExportClothStiffness();
+    void ExportClothStiffnessTrain();
 };
 
 SIM_DECLARE_PTR(cBendingGui);

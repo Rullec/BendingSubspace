@@ -80,6 +80,12 @@ void tBendingStiffnessCloth::ConvertToGUIValue()
     mLinearBendingStiffnessGUI = cBendingStiffnessToLinctexGUIConverter::ConvertToLinctex_Linear(
         this->mLinearBendingStiffness, mRhoG_SI);
     tVectorXd nonlinear_gui = cBendingStiffnessToLinctexGUIConverter::ConvertToLinctex_NonLinear(mNonLinearBendingStiffness_1stterm, mNonLinearBendingStiffness_2ndterm, mRhoG_SI);
+    if (nonlinear_gui.cwiseAbs().maxCoeff() > 100)
+    {
+        std::cout << "[warn] convert nonlinear " << mNonLinearBendingStiffness_1stterm.transpose() << ", " << mNonLinearBendingStiffness_2ndterm.transpose() << std::endl;
+        std::cout << "get " << nonlinear_gui.transpose() << std::endl;
+        
+    }
     mNonLinearBendingStiffness_1sttermGUI = nonlinear_gui.segment(0, 3);
     mNonLinearBendingStiffness_2ndtermGUI = nonlinear_gui.segment(3, 3);
     // mNonLinearBendingStiffness_1sttermGUI = cBendingStiffnessToLinctexGUIConverter::ConvertToLinctex_Linear(
@@ -111,11 +117,19 @@ tVector3d tBendingStiffnessCloth::GetLinearGUIValue() const
     return this->mLinearBendingStiffnessGUI;
 }
 
-tVectorXd tBendingStiffnessCloth::GetNonLinearGUIValue_1st() const
+tVector3d tBendingStiffnessCloth::GetNonLinearGUIValue_1st() const
 {
     return this->mNonLinearBendingStiffness_1sttermGUI;
 }
-tVectorXd tBendingStiffnessCloth::GetNonLinearGUIValue_2nd() const
+tVector3d tBendingStiffnessCloth::GetNonLinearGUIValue_2nd() const
 {
     return this->mNonLinearBendingStiffness_2ndtermGUI;
+}
+
+tVectorXd tBendingStiffnessCloth::GetNonLinearGUIValue() const
+{
+    tVectorXd res = tVectorXd::Zero(6);
+    res.segment(0, 3) = GetNonLinearGUIValue_1st();
+    res.segment(3, 3) = GetNonLinearGUIValue_2nd();
+    return res;
 }

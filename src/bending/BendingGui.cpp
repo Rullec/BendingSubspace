@@ -54,7 +54,8 @@ void cBendingGui::UpdateGui()
     ImGui::Spacing();
     if (export_now)
     {
-        ExportClothStiffness();
+        // ExportClothStiffness();
+        ExportClothStiffnessTrain();
     }
     {
         auto data = GetCurData();
@@ -464,4 +465,42 @@ void cBendingGui::ExportClothStiffness()
     std::string output = "export.json";
     cJsonUtil::WriteJson(output, root);
     std::cout << "[log] output bending stiffness data to " << output << std::endl;
+}
+#include <iomanip>
+void cBendingGui::ExportClothStiffnessTrain()
+{
+    // 1. split dataset
+    int num_of_data = mBendingData.size();
+    int num_of_train = int(num_of_data * 0.8);
+    int num_of_test = num_of_data - num_of_train;
+    int test_gap = int(num_of_data / num_of_test) + 1;
+    std::vector<int> test_idx = {}, train_idx = {};
+    std::ofstream f_train("train_nonlinear.txt");
+    std::ofstream f_test("test_nonlinear.txt");
+    std::cout.precision(1);
+    for (int i = 0; i < num_of_data; i++)
+    {
+        std::string name = mBendingData[i]->GetDir();
+        tVectorXd front = mBendingData[i]->GetFrontBendingStiffness()->GetNonLinearGUIValue();
+        tVectorXd back = mBendingData[i]->GetBackBendingStiffness()->GetNonLinearGUIValue();
+        if (front.cwiseAbs().maxCoeff() > 100 || back.cwiseAbs().maxCoeff() > 100)
+        {
+            std::cout << "[warn] data " << name << " front = " << front.transpose() << ", back = " << back.transpose() << std::endl;
+            continue;
+        }
+        if (i % test_gap && i != 0)
+        {
+            f_test << name << " front " << front.transpose() << std::endl;
+            f_test << name << " back " << back.transpose() << std::endl;
+        }
+        else
+        {
+            f_train << name << " front " << front.transpose() << std::endl;
+            f_train << name << " back " << back.transpose() << std::endl;
+        }
+    }
+    f_train.close();
+    f_test.close();
+    std::cout << "[log] export nonlinear data to train_nonlinear.txt and test_nonlinear.txt\n";
+    // 2. begin to generate
 }

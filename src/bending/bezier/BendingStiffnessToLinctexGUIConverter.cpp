@@ -239,5 +239,13 @@ tVectorXd cBendingStiffnessToLinctexGUIConverter::ConvertToLinctex_NonLinear(con
     tVectorXd res = tVectorXd::Zero(6);
     res.segment(0, 3) = bs_1st_gui;
     res.segment(3, 3) = bs_2nd_gui;
+    if (res.cwiseAbs().maxCoeff() > 100)
+    {
+        std::cout << "[warn] nonlinear 1st raw = " << bending_stiffness_1stterm.transpose() << std::endl;
+        std::cout << "[warn] nonlinear 1st gui = " << bs_1st_gui.transpose() << std::endl;
+        std::cout << "[warn] nonlinear 2nd raw = " << bending_stiffness_2ndterm.transpose() << std::endl;
+        std::cout << "[warn] nonlinear 2nd gui = " << bs_2nd_gui.transpose() << std::endl;
+        // exit(1);
+    }
     return res;
 }
