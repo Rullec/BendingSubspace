@@ -71,7 +71,7 @@ void cBezierCurvePhysics::CutFromHighestPoint()
         }
     }
     int cutted_from_idx = int(mNumOfDiv - 0.9 * (mNumOfDiv - max_value_idx));
-    printf("highest idx %d, cutted idx %d\n", max_value_idx, cutted_from_idx);
+    // printf("highest idx %d, cutted idx %d\n", max_value_idx, cutted_from_idx);
     // std::cout << "Y = " << mPosY.transpose() << std::endl;
 
     // cutted

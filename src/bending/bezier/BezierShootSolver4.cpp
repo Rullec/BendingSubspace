@@ -1,121 +1,142 @@
 #include "BezierShootSolver.h"
-
-static double NumerInte(double com_pos, double rho_g, double a, double b, double total_length, double theta0, int num_of_samples, tVectorXd &x,
-                        tVectorXd &y, bool select_k1)
+// [x, y, s, delta] =
+double NumericalIntegrate(double theta0_deg, double len, double alpha_invRho_invG, double beta_invRho_invG, int numSamples, double guessXc,
+                          tVectorXd &x_solved, tVectorXd &y_solved)
 {
-    tVectorXd s = tVectorXd::LinSpaced(num_of_samples, 0, 1);
-    double ds = s(1) - s(0);
-    x = tVectorXd::Zero(num_of_samples);
-    y = tVectorXd::Zero(num_of_samples);
 
-    // 1. get init K
+    tVectorXd s = tVectorXd::LinSpaced(numSamples, 0, len);
+
+    double ds = s(2) - s(1);
+    x_solved.noalias() = tVectorXd::Zero(numSamples);
+    y_solved.noalias() = tVectorXd::Zero(numSamples);
+
     double K = 0;
-    double discriminant = b * b + 4 * a * rho_g * total_length * total_length * com_pos;
-    if (discriminant < 0)
-    {
-        std::cout << "[error] discriminant = " << discriminant << " < 0 \n";
-        exit(1);
-    }
-    if (a > 0)
-    {
-        K = total_length * (-b + std::sqrt(discriminant)) / (2 * a);
-    }
-    else
-    {
-        // a < 0
-        if (select_k1)
-        {
-            K = total_length * (-b + std::sqrt(discriminant)) / (2 * a);
-        }
-        else
-        {
-            K = total_length * (-b - std::sqrt(discriminant)) / (2 * a);
-        }
-    }
+    double M_invrho_invG = len * len * guessXc - 0;
+    // if (beta_invRho_invG == 0)
+    // {
+    //     K = M_invrho_invG / alpha_invRho_invG;
+    // }
+    // else
+    // {
+    double K_part1 = std::sqrt(
+        std::max(
+            0.0,
+            alpha_invRho_invG * alpha_invRho_invG + 4 * beta_invRho_invG * M_invrho_invG));
+    double K_part2 = 2 * beta_invRho_invG;
+    double K_part3 = (-alpha_invRho_invG +
+                      K_part1);
+    K =
+        K_part3 /
+        K_part2;
+    // }
+    // std::cout << "[shoot] K part1 = " << K_part1 << std::endl;
+    // std::cout << "[shoot] K part2 = " << K_part2 << std::endl;
+    // std::cout << "[shoot] K part3 = " << K_part3 << std::endl;
+    // std::cout << "[shoot]  = " << K_part1 << std::endl;
+    double dKdx_fenzi = s(0) - len,
+           dKdx_fenmu = alpha_invRho_invG + 2 * beta_invRho_invG * K;
+    dKdx_fenmu = std::max(0.0, dKdx_fenmu);
+    double dKdx = (s[0] - len) / (dKdx_fenmu);
+    // std::cout << "[pre] dKdx fenzi = " << dKdx_fenzi << std::endl;
+    // std::cout << "[pre] dKdx fenmu = " << dKdx_fenmu << std::endl;
+    // std::cout << "[pre] dKdx = " << dKdx << std::endl;
+    // std::cout << "[pre] K = " << K << std::endl;
+    // std::cout << "[shoot] alpha_invRho_invG = " << alpha_invRho_invG << std::endl;
+    // std::cout << "[shoot] beta_invRho_invG = " << beta_invRho_invG << std::endl;
 
-    // 2. begin to iter
-    double dydx = std::tan(theta0);
-    double m = 2 * a / (rho_g * std::pow(total_length, 4));
-    double n = b / (rho_g * std::pow(total_length, 3));
-    for (int i = 0; i < s.size() - 1; i++)
+    double dydx = std::tan(theta0_deg * 3.1415926535 / 180.0);
+    double ddydxds = -K * (1 + dydx * dydx);
+    // std::cout << "[shoot] s = " << s.segment(0, 5).transpose() << std::endl;
+    // std::cout << "[shoot] s(0) = " << s[0] << std::endl;
+    // std::cout << "[shoot] alpha_invRho_invG + 2 * beta_invRho_invG * K = " << (alpha_invRho_invG + 2 * beta_invRho_invG * K) << std::endl;
+    // std::cout << "[shoot] len = " << len << std::endl;
+
+    // std::cout << "[shoot] M_invrho_invG = " << M_invrho_invG << std::endl;
+    // std::cout << "[shoot] dKdx = " << dKdx << std::endl;
+    // std::cout << "[shoot] dydx = " << dydx << std::endl;
+    // std::cout << "[shoot] ddydxds = " << ddydxds << std::endl;
+    // exit(1);
+    for (int i = 0; i < numSamples - 1; i++)
     {
         double dx = ds / std::sqrt(1 + dydx * dydx);
-        double dy = (dydx < 0 ? -1 : 1) * ds * sqrt(1 - 1.0 / (1 + dydx * dydx));
+        double dy = (dydx > 0 ? 1 : -1) * ds * std::sqrt(1 - 1.0 / (1 + dydx * dydx));
 
-        x(i + 1) = x(i) + dx; // correct
-        y(i + 1) = y(i) + dy; // correct
+        // std::cout << "[step] " << i << " dx = " << dx << std::endl;
+        // std::cout << "[step] " << i << " dy = " << dy << std::endl;
 
-        double dKdx = 1.0 / (m * K + n) * (s[i] - 1);
-        double new_k = K + dKdx * dx;
-        K = std::max(0.0, new_k);
+        x_solved(i + 1) = x_solved(i) + dx;
+        y_solved(i + 1) = y_solved(i) + dy;
 
-        double ddydxds = -K * (1 + dydx * dydx);
+        // std::cout << "[step] " << i << " old K = " << K << std::endl;
+        // std::cout << "[step] " << i << " before dKdx = " << dKdx << std::endl;
+        // std::cout << "[step] " << i << " before dKdx * dx = " << dKdx * dx << std::endl;
+        double new_K = K + dKdx * dx;
+        // std::cout << "[step] " << i << " new K = " << new_K << std::endl;
+        K = std::max(0.0, new_K);
+        // std::cout << "[step] " << i << " clamped K = " << K << std::endl;
+        double dKdx_fenzi = (s(i + 1) - len);
+        double dKdx_fenmu = (alpha_invRho_invG + 2 * beta_invRho_invG * K);
+        dKdx_fenmu = std::max(dKdx_fenmu, 1e-10);
+        dKdx = dKdx_fenzi / dKdx_fenmu;
+
         dydx = dydx + ddydxds * ds;
-    }
+        ddydxds = -K * (1 + dydx * dydx);
 
-    return std::fabs((x * ds).sum() - com_pos);
+        // std::cout << "[step] " << i << " x = " << x_solved[i + 1] << std::endl;
+        // std::cout << "[step] " << i << " y = " << y_solved[i + 1] << std::endl;
+        // std::cout << "[step] " << i << " K = " << K << std::endl;
+        // std::cout << "[step] " << i << " dKdx = " << dKdx << std::endl;
+        // std::cout << "[step] " << i << " dydx = " << dydx << std::endl;
+        // std::cout << "[step] " << i << " ddydxds = " << ddydxds << std::endl;
+        // if (i > 5)
+        //     exit(1);
+    }
+    // std::cout << "x = " << x_solved.transpose() << std::endl;
+    // std::cout << "y = " << y_solved.transpose() << std::endl;
+    double delta = x_solved.sum() * ds / len - len * guessXc;
+    return delta;
 }
-double cBezierShootSolver::ShootNonLinearSolveRobustNormalized(double rho_g, double a, double b, double total_length, double theta0, int num_of_samples, tVectorXd &x_solved,
+#include "utils/LogUtil.h"
+double cBezierShootSolver::ShootNonLinearSolveRobustNormalized(double rho_g_si, double nonlinear_2ndterm, double nonlinear_1stterm, double total_length_m, double theta0_rad, int num_of_samples, tVectorXd &x_solved,
                                                                tVectorXd &y_solved, bool select_k1)
 {
-    // std::cout << "a = " << a << std::endl;
-    // std::cout << "b = " << b << std::endl;
-    // std::cout << "total_length = " << total_length << std::endl;
-    // std::cout << "theta0 = " << theta0 << std::endl;
-    // std::cout << "rho_g = " << rho_g << std::endl;
-    // 1. give the range
-    double max_c = 1.0 / 2, min_c = 0;
-    if (a < 0)
+    SIM_WARN("[warn] this method is easy to failed cuz of numericall error, when 2nd term is bigger than 1e-8");
+    double guessXc = 0.25;
+    double theta0_deg = theta0_rad / M_PI * 180;
+
+    double alpha_inv_rho_invG = nonlinear_1stterm / (rho_g_si);
+    double beta_inv_rho_invG = nonlinear_2ndterm / (rho_g_si);
+
+    // std::cout << "[inner] alpha wenchao = " << alpha_inv_rho_invG << std::endl;
+    // std::cout << "[inner] beta wenchao = " << beta_inv_rho_invG << std::endl;
     {
-        max_c = std::min(
-            max_c,
-            -b * b / (4 * a * rho_g * total_length * total_length));
+        // rho_g_si = 1;
+        // beta_inv_rho_invG = 7.531909997462524e-11;
+        // alpha_inv_rho_invG = 1.466397325207815e-05;
+        // total_length_m = 0.0893474829655034;
+        // theta0_deg = -35.4472317299905;
+        // theta0_rad = theta0_deg / 180 * 3.1415;
     }
 
-    // 2. warm up the newton method
-    double com_cur = (max_c + min_c) / 2;
-    double com_prev = com_cur * 0.99;
-
-    double func_cur = NumerInte(com_cur, rho_g, a, b, total_length, theta0, num_of_samples, x_solved, y_solved, select_k1);
-    double func_prev = NumerInte(com_prev, rho_g, a, b, total_length, theta0, num_of_samples, x_solved, y_solved, select_k1);
-
-    int cur_iter = 0;
-    int max_iter = 500;
-    double eps = 1e-5;
-    double stepsize = 0.1;
-    std::cout << "[nonlinear_normed] start com = " << com_cur << " err = " << func_cur << std::endl;
-
-    // 3. begin to loop
-    while (std::fabs(func_cur) > eps && cur_iter < max_iter)
+    double delta = NumericalIntegrate(theta0_deg, total_length_m, alpha_inv_rho_invG, beta_inv_rho_invG, num_of_samples, guessXc, x_solved, y_solved);
+    // exit(1);
+    double step = 0.25;
+    double epslion = delta;
+    int iter = 0;
+    while (epslion != 0)
     {
+        step = (delta > 0 ? 1 : -1) * std::fabs(step) / 2.0;
+        guessXc = guessXc + step;
 
-        double step = -stepsize * func_cur * (com_cur - com_prev) / (func_cur - func_prev);
-
-        com_prev = com_cur;
-        com_cur += step;
-
-        // if out of range, reset and re-evaluate
-        if (com_cur < min_c || com_cur > max_c)
-        {
-            // reset
-            std::cout << "[debug_normed] com = " << com_cur << " out of range [0," << max_c << "]\n";
-            com_cur = cMathUtil::RandDouble(0, max_c);
-            std::cout << "[debug_normed] reset to " << com_cur << std::endl;
-            com_prev = com_cur * 0.99;
-            // re-evaluate
-
-            func_prev = NumerInte(com_prev, rho_g, a, b, total_length, theta0, num_of_samples, x_solved, y_solved, select_k1);
-        }
-        else
-        {
-            // inside of the range
-            func_prev = func_cur;
-        }
-        func_cur = NumerInte(com_cur, rho_g, a, b, total_length, theta0, num_of_samples, x_solved, y_solved, select_k1);
-        std::cout << "[nonlinear_normed] cur iter " << cur_iter << " com = " << com_cur << " func = " << func_cur << std::endl;
-        cur_iter += 1;
+        double newDelta = NumericalIntegrate(theta0_deg, total_length_m, alpha_inv_rho_invG, beta_inv_rho_invG, num_of_samples, guessXc, x_solved, y_solved);
+        if (iter % 10 == 0)
+            std::cout << "[nonlinear] iter " << iter << " delta = " << newDelta << std::endl;
+        epslion = newDelta - delta;
+        delta = newDelta;
+        iter += 1;
     }
-    x_solved *= total_length;
-    y_solved *= total_length;
-    return std::fabs(func_cur);
+    return delta;
+    // while (epslion ~= 0)
+
+    // end
 }

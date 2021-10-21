@@ -11,10 +11,12 @@ set(
     bending_src
     BendingGui.cpp
     load/BendingData.cpp
+    load/BendingDataFace.cpp
     load/BendingDataCloth.cpp
     load/BendingDataLoader.cpp
     bezier/BezierCurve.cpp
     bezier/BezierCurvePhysics.cpp
+    bezier/BendingStiffnessToLinctexGUIConverter.cpp
     bezier/BendingStiffness.cpp
     bezier/BezierShootSolver.cpp
     bezier/BezierShootSolver2.cpp

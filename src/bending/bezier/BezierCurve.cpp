@@ -29,8 +29,15 @@ cBezierCurve::cBezierCurve(int num_of_div, const tVector2d &A,
     InitPointlist(point_lst);
     mPosX = point_lst.row(0);
     mPosY = point_lst.row(1);
-    mCurvatureList = CalculateCurvature();
     mArclengthList = CalculateArcLengthList();
+    mCurvatureList = CalculateCurvature();
+    mThetaList = CalculateTheta();
+    // tVectorXd K_from_theta = CalculateCurvatureFromThetaList(); // N - 2
+    // std::cout << "curvature list from theta = " << K_from_theta.segment(0, 5).transpose() << std::endl;
+    // std::cout << "curvature list = " << mCurvatureList.segment(0, 5).transpose() << std::endl;
+    // std::cout << "hello\n";
+    // exit(1);
+    // std::cout << "curvature list = " << mCurvatureList.segment(0, 5).transpose() << std::endl;
 }
 
 int cBezierCurve::GetNumOfDrawEdges() const { return mNumOfDiv - 1; }
@@ -180,7 +187,9 @@ tVectorXd cBezierCurve::CalculateArcLengthList() const
     tVectorXd vec(num_of_seg);
     for (int i = 0; i < num_of_seg; i++)
     {
-        vec[i] = tVector2d(mPosX[i + 1] - mPosX[i], mPosY[i + 1] - mPosY[i]).norm();
+        double dx = mPosX[i + 1] - mPosX[i],
+               dy = mPosY[i + 1] - mPosY[i];
+        vec[i] = std::sqrt(dx * dx + dy * dy);
     }
     return vec;
 }
@@ -199,4 +208,26 @@ double cBezierCurve::GetInitTheta() const
 tVectorXd cBezierCurve::GetCurvatureList() const
 {
     return this->mCurvatureList;
+}
+
+/**
+ * \brief           
+*/
+tVectorXd cBezierCurve::CalculateCurvatureFromThetaList() const
+{
+    tVectorXd theta_diff = mThetaList.segment(1, mThetaList.size() - 1) - mThetaList.segment(0, mThetaList.size() - 1);
+    tVectorXd K_lst = theta_diff.cwiseQuotient((mArclengthList.segment(0, theta_diff.size()))).cwiseAbs();
+    return K_lst;
+}
+
+tVectorXd cBezierCurve::CalculateTheta()
+{
+    tVectorXd theta = tVectorXd::Zero(mPosX.size());
+    for (int i = 0; i < mPosX.size() - 1; i++)
+    {
+        double dx = mPosX[i + 1] - mPosX[i];
+        double dy = mPosY[i + 1] - mPosY[i];
+        theta[i] = std::fabs(std::atan(dy / dx));
+    }
+    return theta;
 }

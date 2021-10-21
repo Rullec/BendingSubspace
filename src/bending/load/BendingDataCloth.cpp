@@ -102,6 +102,8 @@ bool tBendingDataCloth::Init(std::string data_dir, const std::map<int, double> &
     std::sort(mFrontData.begin(), mFrontData.end(), data_sort);
     std::sort(mBackData.begin(), mBackData.end(), data_sort);
 
+    // after init, begin to collect
+    // InitBendingStiffness();
     return true;
 }
 
@@ -166,4 +168,29 @@ tBendingDataPtr tBendingDataCloth::GetBackDataByAngle(float angle)
 double tBendingDataCloth::GetRhoG() const
 {
     return this->mRhoG;
+}
+tBendingDataList tBendingDataCloth::GetFrontDataList() const
+{
+    return mFrontData;
+}
+tBendingDataList tBendingDataCloth::GetBackDataList() const
+{
+    return mBackData;
+}
+
+/**
+ * \brief           init bending stiffness
+ * 1. bending stiffness [SI] [N \cdot m^2]
+ * 2. bending stiffness GUI 
+*/
+void tBendingDataCloth::InitBendingStiffness()
+{
+    mFrontBendingStiffness = std::make_shared<tBendingStiffnessCloth>();
+    mFrontBendingStiffness->Init(mFrontData);
+    mBackBendingStiffness = std::make_shared<tBendingStiffnessCloth>();
+    mBackBendingStiffness->Init(mBackData);
+    std::cout << "[linc] data " << GetDir() << " front linear GUI = " << mFrontBendingStiffness->GetLinearGUIValue().transpose() << std::endl;
+    std::cout << "[linc] data " << GetDir() << " front linear GUI = " << mBackBendingStiffness->GetLinearGUIValue().transpose() << std::endl;
+    // std::cout << "init bending stiffness done\n";
+    // exit(1);
 }

@@ -25,8 +25,8 @@ public:
     tBendingStiffness(
         const tMKCurve &mkcurve);
     float GetLinearBendingStiffness();
-    void GetNonLinearBendingStiffness(float &a, float &b);
-    void GetNonLinearBendingStiffnessWithConstant(float &a, float &b, float & c);
+    void GetNonLinearBendingStiffness(float &term_2nd, float &term_1st);
+    void GetNonLinearBendingStiffnessWithConstant(float &term_2nd, float &term_1st, float &term_constant);
     const tMKCurve &GetLinear_FittedMKList() const;
     const tMKCurve &GetNonLinear_FittedMKList() const;
     const tMKCurve &GetNonLinear_FittedMKList_withconstant() const;
@@ -40,7 +40,7 @@ protected:
     float mNonLinearBendingStiffness_a, mNonLinearBendingStiffness_b, mNonLinearBendingStiffness_c;
 
     float CreateLinearBendingStiffness() const;
-    void CreateNonLinearBendingStiffness(float &k1, float &k2, float & constant_useless) const;
+    void CreateNonLinearBendingStiffness(float &k1, float &k2, float &constant_useless) const;
     void CreateFittedList_Linear(tMKCurve &mk_curve) const;
     void CreateFittedList_Nonlinear(tMKCurve &mk_curve) const;
     void CreateFittedList_Nonlinear_withconstant(tMKCurve &mk_curve) const;

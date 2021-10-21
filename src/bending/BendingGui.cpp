@@ -1,4 +1,5 @@
 #include "BendingGui.h"
+#include "utils/JsonUtil.h"
 #include "bending/load/BendingDataLoader.h"
 #include "render/RenderResource.h"
 #include "utils/LogUtil.h"
@@ -53,8 +54,7 @@ void cBendingGui::UpdateGui()
     ImGui::Spacing();
     if (export_now)
     {
-        std::cout << "now export to "
-                  << " tmp.json\n";
+        ExportClothStiffness();
     }
     {
         auto data = GetCurData();
@@ -143,15 +143,15 @@ void cBendingGui::UpdateClothResource()
         auto bending_stiffness = cutted_bezier_short->GetEstimatedBendingStiffness();
         // 1. get the rho * g, and bending stiffness G
         double linear_bs = bending_stiffness->GetLinearBendingStiffness();
-        std::cout << "linear bs = " << linear_bs << std::endl;
+        // std::cout << "linear bs = " << linear_bs << std::endl;
         double rho_g = cutted_bezier_short->GetRhoG();
-        std::cout << "rho*G = " << rho_g << std::endl;
-        std::cout << "img path = " << data->GetImgPath() << std::endl;
-        std::cout << "mat path = " << data->GetMatPath() << std::endl;
-        std::cout << "rho = " << data->GetRhoG() / 9.81 << std::endl;
+        // std::cout << "rho*G = " << rho_g << std::endl;
+        // std::cout << "img path = " << data->GetImgPath() << std::endl;
+        // std::cout << "mat path = " << data->GetMatPath() << std::endl;
+        // std::cout << "rho = " << data->GetRhoG() / 9.81 << std::endl;
 
         double total_arclength = data->GetBezierPhysicCuttedFromHighest()->GetTotalLength();
-        std::cout << "total_arclength = " << total_arclength << std::endl;
+        // std::cout << "total_arclength = " << total_arclength << std::endl;
         // std::cout << "torque = " << data->GetBezierPhysic()->GetTorqueList() << std::endl;
         // std::cout << "torque/(rho * g) = " << data->GetBezierPhysic()->GetTorqueList() / data->GetBezierPhysic()->GetRhoG() << std::endl;
         // exit(1);
@@ -195,9 +195,26 @@ void cBendingGui::UpdateClothResource()
         else
         {
             std::cout << "[nonlinear] init curvature = " << cutted_bezier_short->GetCurvatureList()[0] << std::endl;
-            float a = 0, b = 0;
-            bending_stiffness->GetNonLinearBendingStiffness(a, b);
-            cBezierShootSolver::ShootNonLinearSolveRobustNormalized(rho_g, a, b, total_arclength, theta0, 2000, mSolvedX, mSolveY, mSelectState.mSelectK1InNonlinearSolver);
+            float term_2nd = 0, term_1st = 0;
+            bending_stiffness->GetNonLinearBendingStiffness(term_2nd, term_1st);
+            // work result!
+            // {
+            //     term_2nd = -1.49e-8 * rho_g;
+            //     term_1st = 0.2730 * 1e-4 * rho_g;
+
+            //     total_arclength = 0.111;
+            //     theta0 = -25.239 / 180 * 3.1415926;
+            // }
+            // term_2nd = -8.49e-8 * rho_g;
+            // term_2nd = 0;
+            // std::cout << "rho_g = " << rho_g << std::endl;
+            // std::cout << "term 2 = " << term_2nd << std::endl;
+            // std::cout << "term 1 = " << term_1st << std::endl;
+            // std::cout << "beta_wenchao = " << term_2nd / (rho_g) << std::endl;
+            // std::cout << "alpha_wenchao = " << term_1st / rho_g << std::endl;
+            // std::cout << "total_arclength = " << total_arclength << std::endl;
+            // std::cout << "theta0_raw = " << theta0 << std::endl;
+            cBezierShootSolver::ShootNonLinearSolveRobustNormalized(rho_g, term_2nd, term_1st, total_arclength, theta0, 2000, mSolvedX, mSolveY, mSelectState.mSelectK1InNonlinearSolver);
             // nonlinear
             // double m = 2 * a / (rho_g * std::pow(total_arclength, 4)), n = b / (rho_g * std::pow(total_arclength, 3));
 
@@ -249,15 +266,18 @@ void cBendingGui::UpdateClothResource()
     //     mSolveY *= total_arclength;
     // }
 }
-void PlotCurve(std::string title, const tMKCurve &curve)
+void PlotCurve(std::string title, const tMKCurve &curve, double rho_g)
 {
-    ImPlot::PlotLine(title.c_str(), GetKlist(curve).data(), GetMlist(curve).data(), GetMlist(curve).size());
+    tVectorXf M_list = GetMlist(curve);
+    M_list /= rho_g;
+    // std::cout << "[render] rhog = " << rho_g << std::endl;
+    ImPlot::PlotLine(title.c_str(), GetKlist(curve).data(), M_list.data(), GetMlist(curve).size());
 }
-void LogYPlotCurve(std::string title, const tMKCurve &curve)
-{
-    tVectorXf new_M = GetMlist(curve).array().log();
-    ImPlot::PlotLine(title.c_str(), GetKlist(curve).data(), new_M.data(), new_M.size());
-}
+// void LogYPlotCurve(std::string title, const tMKCurve &curve)
+// {
+//     tVectorXf new_M = GetMlist(curve).array().log();
+//     ImPlot::PlotLine(title.c_str(), GetKlist(curve).data(), new_M.data(), new_M.size());
+// }
 
 void cBendingGui::UpdatePlot()
 {
@@ -282,7 +302,7 @@ void cBendingGui::UpdatePlot()
                     auto bezier_phy = data->GetBezierPhysic();
 
                     tMKCurve curve = bezier_phy->GetTorqueCurvatureCurve();
-                    PlotCurve("raw", curve);
+                    PlotCurve("raw", curve, bezier_phy->GetRhoG());
                 }
 
                 // plot the cutted
@@ -298,7 +318,7 @@ void cBendingGui::UpdatePlot()
                     auto bezier_phy_cutted = data->GetBezierPhysic_CuttedFromHighest_ToZeroCurvature();
                     auto bending_stiffness = bezier_phy_cutted->GetEstimatedBendingStiffness();
                     tMKCurve curve = bending_stiffness->GetLinear_FittedMKList();
-                    PlotCurve("linear_fit", curve);
+                    PlotCurve("linear_fit", curve, bezier_phy_cutted->GetRhoG());
                 }
                 // {
                 //     auto bezier_phy_cutted = data->GetBezierPhysic_CuttedFromHighest_ToZeroCurvature();
@@ -310,7 +330,7 @@ void cBendingGui::UpdatePlot()
                     auto bezier_phy_cutted = data->GetBezierPhysic_CuttedFromHighest_ToZeroCurvature();
                     auto bending_stiffness = bezier_phy_cutted->GetEstimatedBendingStiffness();
                     tMKCurve curve = bending_stiffness->GetNonLinear_FittedMKList_withconstant();
-                    PlotCurve("nonlinear_fit_(c)", curve);
+                    PlotCurve("nonlinear_fit_(c)", curve, bezier_phy_cutted->GetRhoG());
                 }
                 ImPlot::EndPlot();
             }
@@ -331,6 +351,9 @@ void cBendingGui::UpdatePlot()
                 ImPlot::PlotLine("raw", Xraw.data(), Yraw.data(), Xraw.size());
                 ImPlot::EndPlot();
             }
+            // if(ImPlot::BeginPlot("subspace", "X", "Y", ImVec2(300, 300), ImPlotFlags_Equal))
+            {
+            }
         }
     }
 
@@ -345,4 +368,92 @@ tBendingDataPtr cBendingGui::GetCurData()
     float angle = std::stof(mAngleName[angle_id]);
     auto data = GetBendingData(cur_cloth, face_id, angle);
     return data;
+}
+#include "bezier/BendingStiffnessToLinctexGUIConverter.h"
+void FillJsonDataList(tBendingDataList &front_data_lst, Json::Value &data_lst, tVector3d &linear_bs_warpweftbias,
+                      tVector3d &nonlinear_bs_1stterm_warpweftbias, tVector3d &nonlinear_bs_2ndterm_warpweftbias)
+{
+    bool have_warp = false, have_weft = false, have_bias = false;
+    for (int i = 0; i < front_data_lst.size(); i++)
+    {
+        Json::Value data;
+        auto cur_front_data = front_data_lst[i];
+        std::string img_path = cur_front_data->GetImgPath();
+        double angle = cur_front_data->GetWarpWeftAngle();
+        double unit_cm = cur_front_data->GetUnitCM();
+        double rho_g = cur_front_data->GetRhoG();
+        auto bezier = cur_front_data->GetBezierPhysic_CuttedFromHighest_ToZeroCurvature();
+        auto bending_stiff = bezier->GetEstimatedBendingStiffness();
+        data["img_path"] = img_path;
+        data["angle"] = angle;
+        data["unit_cm"] = unit_cm;
+        double linear_bending = bending_stiff->GetLinearBendingStiffness();
+        float nonlinear_a = 0, nonlinear_b = 0;
+        bending_stiff->GetNonLinearBendingStiffness(nonlinear_a, nonlinear_b);
+        data["linear_bending_stiffness"] = linear_bending;
+        data["nonlinear_bending_stiffness_1st_order_term"] = nonlinear_b;
+        data["nonlinear_bending_stiffness_2nd_order_term"] = nonlinear_a;
+
+        // warp,
+        if (std::fabs(angle - 0) < 1e-6)
+        {
+            // warp
+            SIM_ASSERT(have_warp == false);
+            have_warp = true;
+            linear_bs_warpweftbias[0] = linear_bending;
+            nonlinear_bs_1stterm_warpweftbias[0] = nonlinear_b;
+            nonlinear_bs_2ndterm_warpweftbias[0] = nonlinear_a;
+        }
+        // weft
+        if (std::fabs(angle - 90) < 1e-6)
+        {
+            SIM_ASSERT(have_weft == false);
+            have_weft = true;
+            linear_bs_warpweftbias[1] = linear_bending;
+            nonlinear_bs_1stterm_warpweftbias[1] = nonlinear_b;
+            nonlinear_bs_2ndterm_warpweftbias[1] = nonlinear_a;
+        }
+        // bias angle
+        if (std::fabs(angle - 45) < 1e-6)
+        {
+            SIM_ASSERT(have_bias == false);
+            have_bias = true;
+            linear_bs_warpweftbias[2] = linear_bending;
+            nonlinear_bs_1stterm_warpweftbias[2] = nonlinear_b;
+            nonlinear_bs_2ndterm_warpweftbias[2] = nonlinear_a;
+        }
+        data_lst.append(data);
+    }
+    // 1. get bending stiffness: warp, weft, bias
+}
+/**
+ * \brief           export cloth stiffness
+*/
+void cBendingGui::ExportClothStiffness()
+{
+    Json::Value root = Json::arrayValue;
+    for (int _idx = 0; _idx < mBendingData.size(); _idx++)
+    {
+        auto cloth_data = mBendingData[_idx];
+        int cloth_idx = cloth_data->GetId();
+        std::string cloth_dir = cloth_data->GetDir();
+        double density_kg_m2 = cloth_data->GetRhoG() / 9.81; // for width 1m cloth, the mass per meter
+        Json::Value cur_cloth_data;
+        cur_cloth_data["cloth_idx"] = cloth_idx;
+        cur_cloth_data["cloth_dir"] = cloth_dir;
+        cur_cloth_data["cloth_density_kg_m2"] = density_kg_m2;
+
+        Json::Value front_data_lst_json = Json::arrayValue, back_data_lst_json = Json::arrayValue;
+        auto front_data_lst = cloth_data->GetFrontDataList();
+        auto back_data_lst = cloth_data->GetBackDataList();
+        tVector3d linear_bs, nonlinear_bs_1st, nonlinear_bs_2nd;
+        FillJsonDataList(front_data_lst, front_data_lst_json, linear_bs, nonlinear_bs_1st, nonlinear_bs_2nd);
+        FillJsonDataList(back_data_lst, back_data_lst_json, linear_bs, nonlinear_bs_1st, nonlinear_bs_2nd);
+        cur_cloth_data["front_data"] = front_data_lst_json;
+        cur_cloth_data["back_data"] = back_data_lst_json;
+        root.append(cur_cloth_data);
+    }
+    std::string output = "export.json";
+    cJsonUtil::WriteJson(output, root);
+    std::cout << "[log] output bending stiffness data to " << output << std::endl;
 }

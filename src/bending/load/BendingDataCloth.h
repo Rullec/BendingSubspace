@@ -1,6 +1,9 @@
 #pragma once
 #include "BendingData.h"
+#include "BendingDataFace.h"
 #include <map>
+
+
 class tBendingDataCloth
 {
 public:
@@ -11,6 +14,9 @@ public:
     virtual tVectorXf GetFrontAngleList();
     virtual tVectorXf GetBackAngleList();
     virtual tBendingDataPtr GetFrontDataByIdx(int idx);
+    virtual tBendingDataList GetFrontDataList() const;
+    virtual tBendingDataList GetBackDataList() const;
+
     virtual tBendingDataPtr GetBackDataByIdx(int idx);
     virtual tBendingDataPtr GetFrontDataByAngle(float angle);
     virtual tBendingDataPtr GetBackDataByAngle(float angle);
@@ -21,6 +27,8 @@ protected:
     double mRhoG;
     std::string mDataDir;
     tBendingDataList mFrontData, mBackData;
+    tBendingStiffnessClothPtr mFrontBendingStiffness, mBackBendingStiffness;
+    virtual void InitBendingStiffness();
 };
 
 SIM_DECLARE_PTR(tBendingDataCloth);

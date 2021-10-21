@@ -39,10 +39,10 @@ float tBendingStiffness::GetLinearBendingStiffness()
 /**
  * \brief           return the nonlinear bending stiffness, estimated from given data
 */
-void tBendingStiffness::GetNonLinearBendingStiffness(float &a, float &b)
+void tBendingStiffness::GetNonLinearBendingStiffness(float &term_2nd, float &term_1st)
 {
-    a = mNonLinearBendingStiffness_a;
-    b = mNonLinearBendingStiffness_b;
+    term_2nd = mNonLinearBendingStiffness_a;
+    term_1st = mNonLinearBendingStiffness_b;
 }
 
 void tBendingStiffness::GetNonLinearBendingStiffnessWithConstant(float &a, float &b, float &c)
@@ -131,7 +131,7 @@ void tBendingStiffness::CreateNonLinearBendingStiffness(float &k1, float &k2, fl
         k1 = x[0];
         k2 = x[1];
         constant = x[2];
-        std::cout << "[solved] x = " << (A.inverse() * b).transpose() << std::endl;
+        // std::cout << "[solved] x = " << (A.inverse() * b).transpose() << std::endl;
     }
     // std::cout << "A = \n"
     //           << A << std::endl;

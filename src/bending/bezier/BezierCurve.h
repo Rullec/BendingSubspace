@@ -25,10 +25,13 @@ protected:
     // tMatrixXd mPointList;     // N
     tVectorXd mCurvatureList; // N
     tVectorXd mArclengthList; // N - 1
+    tVectorXd mThetaList; // N - 1
     tVectorXd mU, mOneMinusU; // N
     tVectorXd mPosX, mPosY;   // N
     virtual void InitPointlist(tMatrixXd &point_lst);
     virtual tVectorXd CalculateCurvature() const;
+    virtual tVectorXd CalculateTheta();
+    virtual tVectorXd CalculateCurvatureFromThetaList() const;
     virtual tVectorXd CalculateArcLengthList() const;
 };
 

@@ -64,6 +64,7 @@ protected:
     double mM, mN;                                                                // variable in nonlinear shooting method
     void UpdateClothResource();
     tBendingDataPtr GetCurData();
+    void ExportClothStiffness();
 };
 
 SIM_DECLARE_PTR(cBendingGui);
