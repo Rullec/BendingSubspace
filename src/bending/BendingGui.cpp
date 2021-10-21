@@ -429,6 +429,14 @@ void FillJsonDataList(tBendingDataList &front_data_lst, Json::Value &data_lst, t
 /**
  * \brief           export cloth stiffness
 */
+Json::Value BuildBendingStiffnessDataJson(tBendingStiffnessClothPtr data)
+{
+    Json::Value root;
+    root["linear_bending_stiffness"] = cJsonUtil::BuildVectorJson(data->GetLinearGUIValue());
+    root["nonlinear_bending_stiffness_1st"] = cJsonUtil::BuildVectorJson(data->GetNonLinearGUIValue_1st());
+    root["nonlinear_bending_stiffness_2nd"] = cJsonUtil::BuildVectorJson(data->GetNonLinearGUIValue_2nd());
+    return root;
+}
 void cBendingGui::ExportClothStiffness()
 {
     Json::Value root = Json::arrayValue;
@@ -441,16 +449,16 @@ void cBendingGui::ExportClothStiffness()
         Json::Value cur_cloth_data;
         cur_cloth_data["cloth_idx"] = cloth_idx;
         cur_cloth_data["cloth_dir"] = cloth_dir;
-        cur_cloth_data["cloth_density_kg_m2"] = density_kg_m2;
+        // cur_cloth_data["cloth_density_kg_m2"] = density_kg_m2;
 
-        Json::Value front_data_lst_json = Json::arrayValue, back_data_lst_json = Json::arrayValue;
-        auto front_data_lst = cloth_data->GetFrontDataList();
-        auto back_data_lst = cloth_data->GetBackDataList();
-        tVector3d linear_bs, nonlinear_bs_1st, nonlinear_bs_2nd;
-        FillJsonDataList(front_data_lst, front_data_lst_json, linear_bs, nonlinear_bs_1st, nonlinear_bs_2nd);
-        FillJsonDataList(back_data_lst, back_data_lst_json, linear_bs, nonlinear_bs_1st, nonlinear_bs_2nd);
-        cur_cloth_data["front_data"] = front_data_lst_json;
-        cur_cloth_data["back_data"] = back_data_lst_json;
+        // Json::Value front_data_lst_json = Json::arrayValue, back_data_lst_json = Json::arrayValue;
+        // auto front_data_lst = cloth_data->GetFrontDataList();
+        // auto back_data_lst = cloth_data->GetBackDataList();
+        // tVector3d linear_bs, nonlinear_bs_1st, nonlinear_bs_2nd;
+        // FillJsonDataList(front_data_lst, front_data_lst_json, linear_bs, nonlinear_bs_1st, nonlinear_bs_2nd);
+        // FillJsonDataList(back_data_lst, back_data_lst_json, linear_bs, nonlinear_bs_1st, nonlinear_bs_2nd);
+        cur_cloth_data["front_data"] = BuildBendingStiffnessDataJson(cloth_data->GetFrontBendingStiffness());
+        cur_cloth_data["back_data"] = BuildBendingStiffnessDataJson(cloth_data->GetBackBendingStiffness());
         root.append(cur_cloth_data);
     }
     std::string output = "export.json";

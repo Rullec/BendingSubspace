@@ -92,8 +92,8 @@ double convert_bending_simtogui(double value)
             return gui_st + (value - sim_st) / (sim_ed - sim_st) * (gui_ed - gui_st);
         }
     }
-    if (value > bending_map_guitosim[-1].first)
-        return bending_map_guitosim[-1].second;
+    if (value > bending_map_guitosim[bending_map_guitosim.size() - 1].first)
+        return bending_map_guitosim[bending_map_guitosim.size() - 1].second;
 }
 
 tVector3d bending_nonlinear_gauss_seidel(const tMatrix3d &mat, const tVector3d &rhs)
@@ -221,4 +221,23 @@ tVector3d cBendingStiffnessToLinctexGUIConverter::ConvertToLinctex_Linear(const 
     return gui_value;
 
     // 3. bending stiffness sim to GUI value
+}
+
+tVectorXd cBendingStiffnessToLinctexGUIConverter::ConvertToLinctex_NonLinear(const tVector3d &bending_stiffness_1stterm, const tVector3d &bending_stiffness_2ndterm, double rho_g_si)
+{
+    tVector3d bs_1st_gui = cBendingStiffnessToLinctexGUIConverter::ConvertToLinctex_Linear(bending_stiffness_1stterm, rho_g_si);
+    // tVector3d bs_2nd_gui = cBendingStiffnessToLinctexGUIConverter::ConvertToLinctex_Linear(bending_stiffness_2ndterm, rho_g_si);
+    tVector3d sign = tVector3d::Zero();
+    tVector3d bs_2nd_raw = bending_stiffness_2ndterm;
+    // record the symbol, and convert them to positive
+    for (int i = 0; i < 3; i++)
+    {
+        sign[i] = bending_stiffness_2ndterm[i] > 0 ? 1 : -1;
+        bs_2nd_raw[i] *= sign[i] * 30;
+    }
+    tVector3d bs_2nd_gui = sign.cwiseProduct(cBendingStiffnessToLinctexGUIConverter::ConvertToLinctex_Linear(bs_2nd_raw, rho_g_si));
+    tVectorXd res = tVectorXd::Zero(6);
+    res.segment(0, 3) = bs_1st_gui;
+    res.segment(3, 3) = bs_2nd_gui;
+    return res;
 }

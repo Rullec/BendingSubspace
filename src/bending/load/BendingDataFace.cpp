@@ -79,7 +79,19 @@ void tBendingStiffnessCloth::ConvertToGUIValue()
 {
     mLinearBendingStiffnessGUI = cBendingStiffnessToLinctexGUIConverter::ConvertToLinctex_Linear(
         this->mLinearBendingStiffness, mRhoG_SI);
-    // std::cout << "convert GUI = " << mLinearBendingStiffnessGUI.transpose() << std::endl;
+    tVectorXd nonlinear_gui = cBendingStiffnessToLinctexGUIConverter::ConvertToLinctex_NonLinear(mNonLinearBendingStiffness_1stterm, mNonLinearBendingStiffness_2ndterm, mRhoG_SI);
+    mNonLinearBendingStiffness_1sttermGUI = nonlinear_gui.segment(0, 3);
+    mNonLinearBendingStiffness_2ndtermGUI = nonlinear_gui.segment(3, 3);
+    // mNonLinearBendingStiffness_1sttermGUI = cBendingStiffnessToLinctexGUIConverter::ConvertToLinctex_Linear(
+    //     this->mNonLinearBendingStiffness_1stterm, mRhoG_SI);
+
+    // mNonLinearBendingStiffness_2ndtermGUI = cBendingStiffnessToLinctexGUIConverter::ConvertToLinctex_Linear(
+    //     this->mNonLinearBendingStiffness_2ndterm, mRhoG_SI);
+    // std::cout
+    //     << "linear term from " << mLinearBendingStiffness.transpose() << " to " << mLinearBendingStiffnessGUI.transpose() << std::endl;
+    // std::cout << "nonlinear 1st term from " << mNonLinearBendingStiffness_1stterm.transpose() << " to " << mNonLinearBendingStiffness_1sttermGUI.transpose() << std::endl;
+    // std::cout << "nonlinear 2nd term from " << mNonLinearBendingStiffness_2ndterm.transpose() << " to " << mNonLinearBendingStiffness_2ndtermGUI.transpose() << std::endl;
+    // exit(1);
 }
 
 double tBendingStiffnessCloth::GetRhoGSI(const tBendingDataList &data_lst) const
@@ -97,4 +109,13 @@ double tBendingStiffnessCloth::GetRhoGSI(const tBendingDataList &data_lst) const
 tVector3d tBendingStiffnessCloth::GetLinearGUIValue() const
 {
     return this->mLinearBendingStiffnessGUI;
+}
+
+tVectorXd tBendingStiffnessCloth::GetNonLinearGUIValue_1st() const
+{
+    return this->mNonLinearBendingStiffness_1sttermGUI;
+}
+tVectorXd tBendingStiffnessCloth::GetNonLinearGUIValue_2nd() const
+{
+    return this->mNonLinearBendingStiffness_2ndtermGUI;
 }

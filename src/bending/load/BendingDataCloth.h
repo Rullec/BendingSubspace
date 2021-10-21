@@ -20,6 +20,8 @@ public:
     virtual tBendingDataPtr GetBackDataByIdx(int idx);
     virtual tBendingDataPtr GetFrontDataByAngle(float angle);
     virtual tBendingDataPtr GetBackDataByAngle(float angle);
+    virtual tBendingStiffnessClothPtr GetFrontBendingStiffness() const; // get bending stiffness (warp, weft, bias) (non) linear data
+    virtual tBendingStiffnessClothPtr GetBackBendingStiffness() const; // get bending stiffness (warp, weft, bias) (non) linear data
     virtual double GetRhoG() const;
 
 protected:

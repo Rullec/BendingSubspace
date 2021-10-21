@@ -13,6 +13,8 @@ public:
     explicit tBendingStiffnessCloth();
     void Init(const tBendingDataList &data_lst);
     tVector3d GetLinearGUIValue() const;
+    tVectorXd GetNonLinearGUIValue_1st() const;
+    tVectorXd GetNonLinearGUIValue_2nd() const;
 protected:
     // --------- bending stiffnes [N * m^2] ----------
     double mRhoG_SI;

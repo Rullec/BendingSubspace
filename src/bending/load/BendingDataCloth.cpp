@@ -103,7 +103,7 @@ bool tBendingDataCloth::Init(std::string data_dir, const std::map<int, double> &
     std::sort(mBackData.begin(), mBackData.end(), data_sort);
 
     // after init, begin to collect
-    // InitBendingStiffness();
+    InitBendingStiffness();
     return true;
 }
 
@@ -189,8 +189,23 @@ void tBendingDataCloth::InitBendingStiffness()
     mFrontBendingStiffness->Init(mFrontData);
     mBackBendingStiffness = std::make_shared<tBendingStiffnessCloth>();
     mBackBendingStiffness->Init(mBackData);
-    std::cout << "[linc] data " << GetDir() << " front linear GUI = " << mFrontBendingStiffness->GetLinearGUIValue().transpose() << std::endl;
-    std::cout << "[linc] data " << GetDir() << " front linear GUI = " << mBackBendingStiffness->GetLinearGUIValue().transpose() << std::endl;
+    // std::cout << "[linc] data " << GetDir() << " front linear GUI = " << mFrontBendingStiffness->GetLinearGUIValue().transpose() << std::endl;
+    // std::cout << "[linc] data " << GetDir() << " front linear GUI = " << mBackBendingStiffness->GetLinearGUIValue().transpose() << std::endl;
     // std::cout << "init bending stiffness done\n";
     // exit(1);
+}
+
+/**
+ * \brief       return the warp, weft bias bending stiffness
+*/
+tBendingStiffnessClothPtr tBendingDataCloth::GetFrontBendingStiffness() const // get bending stiffness (warp, weft, bias) (non) linear data
+{
+    return mFrontBendingStiffness;
+}
+/**
+ * \brief       return the warp, weft bias bending stiffness
+*/
+tBendingStiffnessClothPtr tBendingDataCloth::GetBackBendingStiffness() const // get bending stiffness (warp, weft, bias) (non) linear data
+{
+    return mBackBendingStiffness;
 }
